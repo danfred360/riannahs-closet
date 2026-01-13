@@ -162,6 +162,10 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+function isMobileUserAgent(ua: string): boolean {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
 function configureExpoAndLanding(app: express.Application) {
   const templatePath = path.resolve(
     process.cwd(),
@@ -171,8 +175,13 @@ function configureExpoAndLanding(app: express.Application) {
   );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
+  const webDistPath = path.resolve(process.cwd(), "dist");
+  const hasWebBuild = fs.existsSync(path.join(webDistPath, "index.html"));
 
   log("Serving static Expo files with dynamic manifest routing");
+  if (hasWebBuild) {
+    log("Web build detected at dist/ - will serve to desktop browsers");
+  }
 
   // In development, proxy Metro bundler requests through Express
   // This allows mobile devices to access everything through port 80 (via Express on 8081)
@@ -207,6 +216,11 @@ function configureExpoAndLanding(app: express.Application) {
     log("Development mode: Proxying Metro bundler requests through Express");
   }
 
+  // Serve web app static files for desktop browsers
+  if (hasWebBuild) {
+    app.use("/_expo", express.static(path.join(webDistPath, "_expo")));
+  }
+
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {
       return next();
@@ -222,6 +236,14 @@ function configureExpoAndLanding(app: express.Application) {
     }
 
     if (req.path === "/") {
+      const userAgent = req.header("user-agent") || "";
+      const isMobile = isMobileUserAgent(userAgent);
+      
+      // Serve web app for desktop browsers, landing page for mobile
+      if (!isMobile && hasWebBuild) {
+        return res.sendFile(path.join(webDistPath, "index.html"));
+      }
+      
       return serveLandingPage({
         req,
         res,
@@ -235,6 +257,31 @@ function configureExpoAndLanding(app: express.Application) {
 
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
+  
+  // Also serve web build assets as fallback
+  if (hasWebBuild) {
+    app.use(express.static(webDistPath));
+  }
+
+  // SPA catch-all for client-side routing (deep links like /outfits, /calendar, etc.)
+  if (hasWebBuild) {
+    app.get("*", (req: Request, res: Response, next: NextFunction) => {
+      // Skip API routes
+      if (req.path.startsWith("/api")) {
+        return next();
+      }
+      
+      const userAgent = req.header("user-agent") || "";
+      const isMobile = isMobileUserAgent(userAgent);
+      
+      // Serve SPA for desktop browsers, skip for mobile (they'll use Expo Go)
+      if (!isMobile) {
+        return res.sendFile(path.join(webDistPath, "index.html"));
+      }
+      
+      next();
+    });
+  }
 
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
