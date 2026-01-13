@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, TextInput } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
 import { OutfitCard } from "@/components/OutfitCard";
@@ -13,7 +14,7 @@ import { SkeletonGrid } from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem } from "@/lib/types";
 import { getOutfits, getClothingItems } from "@/lib/api";
-import { Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,6 +29,19 @@ export default function OutfitsScreen() {
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredOutfits = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return outfits;
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return outfits.filter((outfit) => {
+      const nameMatch = outfit.name.toLowerCase().includes(query);
+      const tagMatch = outfit.tags?.some((tag) => tag.toLowerCase().includes(query));
+      return nameMatch || tagMatch;
+    });
+  }, [outfits, searchQuery]);
 
   const loadData = useCallback(async () => {
     try {
@@ -94,22 +108,46 @@ export default function OutfitsScreen() {
     );
   };
 
+  const renderHeader = () => (
+    <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
+      <Feather name="search" size={18} color={theme.textSecondary} />
+      <TextInput
+        style={[styles.searchInput, { color: theme.text }]}
+        placeholder="Search by name or tag..."
+        placeholderTextColor={theme.textSecondary}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      {searchQuery.length > 0 ? (
+        <Feather
+          name="x"
+          size={18}
+          color={theme.textSecondary}
+          onPress={() => setSearchQuery("")}
+        />
+      ) : null}
+    </View>
+  );
+
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={outfits}
+        data={filteredOutfits}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={outfits.length > 0 ? styles.row : undefined}
+        columnWrapperStyle={filteredOutfits.length > 0 ? styles.row : undefined}
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: headerHeight + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing["5xl"],
           },
-          outfits.length === 0 && styles.emptyContent,
+          filteredOutfits.length === 0 && styles.emptyContent,
         ]}
+        ListHeaderComponent={outfits.length > 0 ? renderHeader : null}
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
@@ -145,5 +183,19 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     flex: 1,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: Typography.body.fontSize,
+    paddingVertical: Spacing.xs,
   },
 });
