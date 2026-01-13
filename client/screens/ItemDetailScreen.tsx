@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Alert, Pressable } from "react-native";
+import { View, StyleSheet, ScrollView, Alert, Pressable, Platform } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,31 +62,46 @@ export default function ItemDetailScreen() {
     });
   }, [navigation, route.params.itemId, theme.text]);
 
+  const performDelete = async () => {
+    try {
+      await deleteClothingItem(route.params.itemId);
+      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      if (Platform.OS === "web") {
+        alert("Failed to delete item. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to delete item. Please try again.");
+      }
+    }
+  };
+
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Item",
-      "Are you sure you want to delete this item? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteClothingItem(route.params.itemId);
-              queryClient.invalidateQueries({ queryKey: ["/api/items"] });
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-              navigation.goBack();
-            } catch (error) {
-              console.error("Error deleting item:", error);
-              Alert.alert("Error", "Failed to delete item. Please try again.");
-            }
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this item? This action cannot be undone."
+      );
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Item",
+        "Are you sure you want to delete this item? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: performDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (!item) {
