@@ -174,14 +174,16 @@ function configureExpoAndLanding(app: express.Application) {
   log("Serving static Expo files with dynamic manifest routing");
 
   // In development, proxy Metro bundler requests through Express
-  // This allows mobile devices to access everything through port 5000
+  // This allows mobile devices to access everything through port 80 (via Express on 8081)
   if (process.env.NODE_ENV === "development") {
+    const metroPort = process.env.METRO_PORT || "19000";
     const metroProxy = createProxyMiddleware({
-      target: "http://localhost:8081",
+      target: `http://localhost:${metroPort}`,
       changeOrigin: true,
       ws: true,
       logger: console,
     });
+    log(`Proxying Metro bundler requests to port ${metroPort}`);
 
     // Proxy specific Metro bundler paths
     app.use("/node_modules", metroProxy);

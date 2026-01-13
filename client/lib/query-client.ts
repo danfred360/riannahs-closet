@@ -12,20 +12,13 @@ export function getApiUrl(): string {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
   }
 
-  // Extract the base domain without port
-  const [baseDomain, port] = host.split(":");
-  
-  // On mobile (iOS/Android), use Replit's per-port subdomain format
-  // e.g., https://5000-domain.replit.dev instead of https://domain.replit.dev:5000
-  // This ensures the request goes through standard HTTPS port 443
-  if (Platform.OS !== "web" && port) {
-    const mobileHost = `${port}-${baseDomain}`;
-    console.log("Mobile API host:", mobileHost);
-    return new URL(`https://${mobileHost}`).href;
-  }
-
-  // For web, keep the original format with port
+  // Use the domain with port as configured
+  // Mobile devices need access to port 5000 - if blocked by network, user should try mobile data
   let url = new URL(`https://${host}`);
+  
+  if (Platform.OS !== "web") {
+    console.log("Mobile API URL:", url.href);
+  }
 
   return url.href;
 }
