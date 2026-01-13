@@ -9,7 +9,6 @@ import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
-import { Button } from "@/components/Button";
 import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, CATEGORY_LABELS } from "@/lib/types";
@@ -151,13 +150,15 @@ export default function ItemDetailScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Button
-            variant="outline"
+          <Pressable
             onPress={handleDelete}
-            style={[styles.deleteButton, { borderColor: theme.error }]}
+            style={[
+              styles.deleteButton,
+              { borderColor: theme.error, borderWidth: 1, borderRadius: 24, paddingVertical: 14, alignItems: "center" },
+            ]}
           >
-            <ThemedText style={{ color: theme.error }}>Delete Item</ThemedText>
-          </Button>
+            <ThemedText style={{ color: theme.error, fontWeight: "600" }}>Delete Item</ThemedText>
+          </Pressable>
         </View>
       </ScrollView>
     </ThemedView>
