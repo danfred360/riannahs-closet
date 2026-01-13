@@ -108,6 +108,7 @@ export function OutfitCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
+    maxWidth: 200,
     borderRadius: BorderRadius.sm,
     overflow: "hidden",
   },
