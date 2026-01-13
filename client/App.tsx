@@ -74,7 +74,11 @@ export default function App() {
           <SafeAreaProvider>
             <GestureHandlerRootView style={styles.root}>
               <KeyboardProvider>
-                <NavigationContainer>
+                <NavigationContainer
+                  documentTitle={{
+                    formatter: () => "Riannah's Closet",
+                  }}
+                >
                   <AppContent />
                 </NavigationContainer>
                 <StatusBar style="auto" />
