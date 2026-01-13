@@ -6,6 +6,7 @@ import {
   Pressable,
   Alert,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -35,6 +36,9 @@ import {
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+const MAX_CONTENT_WIDTH = 480;
+const MAX_IMAGE_SIZE = 320;
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteParams = RouteProp<RootStackParamList, "AddEditItem">;
 
@@ -45,8 +49,11 @@ export default function AddEditItemScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
+  const { width: windowWidth } = useWindowDimensions();
 
   const isEditing = !!route.params?.itemId;
+  const isWideScreen = windowWidth > 600;
+  const imageSize = isWideScreen ? MAX_IMAGE_SIZE : windowWidth - Spacing.lg * 2;
 
   const [name, setName] = useState("");
   const [imageUri, setImageUri] = useState("");
@@ -239,56 +246,80 @@ export default function AddEditItemScreen() {
       style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingTop: headerHeight + Spacing.lg, paddingBottom: insets.bottom + Spacing.xl },
+        { 
+          paddingTop: headerHeight + Spacing.lg, 
+          paddingBottom: insets.bottom + Spacing.xl,
+          alignItems: isWideScreen ? "center" : "stretch",
+        },
       ]}
     >
-      <View style={styles.imageSection}>
-        {imageUri ? (
-          <Pressable onPress={handlePickImage}>
-            <Image
-              source={{ uri: imageUri }}
-              style={styles.image}
-              contentFit="cover"
-            />
-            <View
-              style={[
-                styles.changeImageOverlay,
-                { backgroundColor: theme.overlay },
-              ]}
-            >
-              <Feather name="camera" size={24} color="white" />
-              <ThemedText style={styles.changeImageText}>
-                Change Photo
-              </ThemedText>
+      <View style={[styles.contentContainer, isWideScreen && { maxWidth: MAX_CONTENT_WIDTH }]}>
+        <View style={[styles.imageSection, isWideScreen && { alignItems: "center" }]}>
+          {imageUri ? (
+            <Pressable onPress={handlePickImage}>
+              <Image
+                source={{ uri: imageUri }}
+                style={[
+                  styles.image,
+                  { 
+                    width: imageSize, 
+                    height: imageSize,
+                    maxWidth: MAX_IMAGE_SIZE,
+                    maxHeight: MAX_IMAGE_SIZE,
+                  },
+                ]}
+                contentFit="cover"
+              />
+              <View
+                style={[
+                  styles.changeImageOverlay,
+                  { backgroundColor: theme.overlay },
+                ]}
+              >
+                <Feather name="camera" size={24} color="white" />
+                <ThemedText style={styles.changeImageText}>
+                  Change Photo
+                </ThemedText>
+              </View>
+            </Pressable>
+          ) : (
+            <View style={[
+              styles.imagePlaceholder, 
+              isWideScreen && { maxWidth: MAX_IMAGE_SIZE }
+            ]}>
+              <Pressable
+                style={[
+                  styles.imageButton,
+                  { 
+                    backgroundColor: theme.backgroundSecondary,
+                    maxWidth: (MAX_IMAGE_SIZE - Spacing.md) / 2,
+                    maxHeight: (MAX_IMAGE_SIZE - Spacing.md) / 2,
+                  },
+                ]}
+                onPress={handlePickImage}
+              >
+                <Feather name="image" size={32} color={theme.textSecondary} />
+                <ThemedText type="caption">Choose Photo</ThemedText>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.imageButton,
+                  { 
+                    backgroundColor: theme.backgroundSecondary,
+                    maxWidth: (MAX_IMAGE_SIZE - Spacing.md) / 2,
+                    maxHeight: (MAX_IMAGE_SIZE - Spacing.md) / 2,
+                  },
+                ]}
+                onPress={handleTakePhoto}
+              >
+                <Feather name="camera" size={32} color={theme.textSecondary} />
+                <ThemedText type="caption">Take Photo</ThemedText>
+              </Pressable>
             </View>
-          </Pressable>
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Pressable
-              style={[
-                styles.imageButton,
-                { backgroundColor: theme.backgroundSecondary },
-              ]}
-              onPress={handlePickImage}
-            >
-              <Feather name="image" size={32} color={theme.textSecondary} />
-              <ThemedText type="caption">Choose Photo</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.imageButton,
-                { backgroundColor: theme.backgroundSecondary },
-              ]}
-              onPress={handleTakePhoto}
-            >
-              <Feather name="camera" size={32} color={theme.textSecondary} />
-              <ThemedText type="caption">Take Photo</ThemedText>
-            </Pressable>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
 
-      <View style={styles.form}>
+        <View style={styles.form}>
         <View style={styles.field}>
           <ThemedText type="caption" style={styles.label}>
             Name
@@ -366,6 +397,7 @@ export default function AddEditItemScreen() {
             </View>
           ) : null}
         </View>
+        </View>
       </View>
     </KeyboardAwareScrollViewCompat>
   );
@@ -375,13 +407,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: Spacing.lg,
   },
+  contentContainer: {
+    width: "100%",
+  },
   imageSection: {
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing["2xl"],
   },
   image: {
-    width: "100%",
-    aspectRatio: 1,
     borderRadius: BorderRadius.md,
   },
   changeImageOverlay: {
