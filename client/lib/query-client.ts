@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { Platform } from "react-native";
 
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
@@ -9,6 +10,12 @@ export function getApiUrl(): string {
 
   if (!host) {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+  }
+
+  // On mobile devices (iOS/Android via Expo Go), remove the port since external devices
+  // must go through Replit's HTTPS proxy (port 443). On web, keep the port for internal access.
+  if (Platform.OS !== "web") {
+    host = host.split(":")[0];
   }
 
   let url = new URL(`https://${host}`);
