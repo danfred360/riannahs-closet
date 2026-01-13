@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -24,6 +25,7 @@ export default function ItemDetailScreen() {
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
 
   const [item, setItem] = useState<ClothingItem | null>(null);
 
@@ -73,12 +75,14 @@ export default function ItemDetailScreen() {
           onPress: async () => {
             try {
               await deleteClothingItem(route.params.itemId);
+              queryClient.invalidateQueries({ queryKey: ["/api/items"] });
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Success
               );
               navigation.goBack();
             } catch (error) {
               console.error("Error deleting item:", error);
+              Alert.alert("Error", "Failed to delete item. Please try again.");
             }
           },
         },

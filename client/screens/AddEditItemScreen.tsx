@@ -16,6 +16,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
+import { useQueryClient } from "@tanstack/react-query";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
@@ -43,6 +44,7 @@ export default function AddEditItemScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
 
   const isEditing = !!route.params?.itemId;
 
@@ -221,6 +223,7 @@ export default function AddEditItemScreen() {
         });
       }
 
+      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {
