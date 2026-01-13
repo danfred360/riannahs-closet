@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
@@ -171,6 +172,37 @@ function configureExpoAndLanding(app: express.Application) {
   const appName = getAppName();
 
   log("Serving static Expo files with dynamic manifest routing");
+
+  // In development, proxy Metro bundler requests through Express
+  // This allows mobile devices to access everything through port 5000
+  if (process.env.NODE_ENV === "development") {
+    const metroProxy = createProxyMiddleware({
+      target: "http://localhost:8081",
+      changeOrigin: true,
+      ws: true,
+      logger: console,
+    });
+
+    // Proxy specific Metro bundler paths
+    app.use("/node_modules", metroProxy);
+    app.use("/debugger-ui", metroProxy);
+    app.use("/.expo", metroProxy);
+    app.use("/logs", metroProxy);
+    app.use("/inspector", metroProxy);
+    app.use("/symbolicate", metroProxy);
+    app.use("/message", metroProxy);
+    app.use("/status", metroProxy);
+    
+    // Proxy JS bundle requests
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.path.endsWith(".bundle") || req.path.endsWith(".map") || req.path.includes("/hot")) {
+        return metroProxy(req, res, next);
+      }
+      next();
+    });
+
+    log("Development mode: Proxying Metro bundler requests through Express");
+  }
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {

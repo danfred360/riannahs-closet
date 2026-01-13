@@ -12,12 +12,19 @@ export function getApiUrl(): string {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
   }
 
-  // On mobile devices (iOS/Android via Expo Go), remove the port since external devices
-  // must go through Replit's HTTPS proxy (port 443). On web, keep the port for internal access.
-  if (Platform.OS !== "web") {
-    host = host.split(":")[0];
+  // Extract the base domain without port
+  const [baseDomain, port] = host.split(":");
+  
+  // On mobile (iOS/Android), use Replit's per-port subdomain format
+  // e.g., https://5000-domain.replit.dev instead of https://domain.replit.dev:5000
+  // This ensures the request goes through standard HTTPS port 443
+  if (Platform.OS !== "web" && port) {
+    const mobileHost = `${port}-${baseDomain}`;
+    console.log("Mobile API host:", mobileHost);
+    return new URL(`https://${mobileHost}`).href;
   }
 
+  // For web, keep the original format with port
   let url = new URL(`https://${host}`);
 
   return url.href;

@@ -104,13 +104,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const response = await fetch(new URL("/api/auth/login", getApiUrl()).toString(), {
+      const apiUrl = getApiUrl();
+      const loginUrl = new URL("/api/auth/login", apiUrl).toString();
+      console.log("Login attempt to:", loginUrl, "Platform:", Platform.OS);
+      
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      console.log("Login response status:", response.status, "First 100 chars:", text.substring(0, 100));
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Failed to parse login response as JSON:", text.substring(0, 200));
+        return { success: false, error: "Server returned invalid response" };
+      }
 
       if (!response.ok) {
         return { success: false, error: data.error || "Login failed" };
