@@ -49,6 +49,7 @@ export default function OutfitBuilderScreen() {
     ClothingCategory | "all"
   >("all");
   const [saving, setSaving] = useState(false);
+  const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
 
   const loadData = useCallback(async () => {
     try {
@@ -61,6 +62,7 @@ export default function OutfitBuilderScreen() {
         if (outfit) {
           setName(outfit.name);
           setSelectedItemIds(outfit.itemIds);
+          setOriginalCreatedAt(outfit.createdAt);
         }
       }
     } catch (error) {
@@ -109,16 +111,11 @@ export default function OutfitBuilderScreen() {
         id: isEditing ? route.params!.outfitId! : generateId(),
         name: name.trim(),
         itemIds: selectedItemIds,
-        createdAt: now,
+        createdAt: isEditing ? originalCreatedAt : now,
         updatedAt: now,
       };
 
       if (isEditing) {
-        const outfits = await getOutfits();
-        const existing = outfits.find((o) => o.id === route.params?.outfitId);
-        if (existing) {
-          outfit.createdAt = existing.createdAt;
-        }
         await updateOutfit(outfit);
       } else {
         await addOutfit(outfit);

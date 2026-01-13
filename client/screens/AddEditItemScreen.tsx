@@ -51,6 +51,7 @@ export default function AddEditItemScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [saving, setSaving] = useState(false);
+  const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
 
   useEffect(() => {
     if (isEditing) {
@@ -67,6 +68,7 @@ export default function AddEditItemScreen() {
         setImageUri(item.imageUri);
         setCategory(item.category);
         setTags(item.tags);
+        setOriginalCreatedAt(item.createdAt);
       }
     } catch (error) {
       console.error("Error loading item:", error);
@@ -169,19 +171,13 @@ export default function AddEditItemScreen() {
         category,
         imageUri,
         tags,
-        createdAt: isEditing ? "" : now,
+        createdAt: isEditing ? originalCreatedAt : now,
         updatedAt: now,
       };
 
       if (isEditing) {
-        const items = await getClothingItems();
-        const existing = items.find((i) => i.id === route.params?.itemId);
-        if (existing) {
-          item.createdAt = existing.createdAt;
-        }
         await updateClothingItem(item);
       } else {
-        item.createdAt = now;
         await addClothingItem(item);
       }
 
