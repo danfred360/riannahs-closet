@@ -8,6 +8,7 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
+import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, CATEGORY_LABELS } from "@/lib/types";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -65,6 +66,18 @@ export function ClothingItemCard({
         <ThemedText type="small" numberOfLines={1}>
           {CATEGORY_LABELS[item.category]}
         </ThemedText>
+        {item.tags && item.tags.length > 0 ? (
+          <View style={styles.tagsRow}>
+            {item.tags.slice(0, 2).map((tag) => (
+              <TagChip key={tag} label={tag} size="small" />
+            ))}
+            {item.tags.length > 2 ? (
+              <ThemedText type="small" style={styles.moreText}>
+                +{item.tags.length - 2}
+              </ThemedText>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </AnimatedPressable>
   );
@@ -86,5 +99,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontWeight: "500",
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: Spacing.xs,
+  },
+  moreText: {
+    opacity: 0.6,
   },
 });

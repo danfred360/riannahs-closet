@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TextInput } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, TextInput, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -108,31 +108,29 @@ export default function OutfitsScreen() {
     );
   };
 
-  const renderHeader = () => (
-    <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
-      <Feather name="search" size={18} color={theme.textSecondary} />
-      <TextInput
-        style={[styles.searchInput, { color: theme.text }]}
-        placeholder="Search by name or tag..."
-        placeholderTextColor={theme.textSecondary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      {searchQuery.length > 0 ? (
-        <Feather
-          name="x"
-          size={18}
-          color={theme.textSecondary}
-          onPress={() => setSearchQuery("")}
-        />
-      ) : null}
-    </View>
-  );
-
   return (
     <ThemedView style={styles.container}>
+      {outfits.length > 0 ? (
+        <View style={[styles.searchWrapper, { paddingTop: headerHeight + Spacing.lg }]}>
+          <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="search" size={18} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search by name or tag..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 ? (
+              <Pressable onPress={() => setSearchQuery("")}>
+                <Feather name="x" size={18} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
       <FlatList
         data={filteredOutfits}
         renderItem={renderItem}
@@ -142,12 +140,11 @@ export default function OutfitsScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.lg,
+            paddingTop: outfits.length > 0 ? Spacing.md : headerHeight + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing["5xl"],
           },
           filteredOutfits.length === 0 && styles.emptyContent,
         ]}
-        ListHeaderComponent={outfits.length > 0 ? renderHeader : null}
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
@@ -197,5 +194,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: Typography.body.fontSize,
     paddingVertical: Spacing.xs,
+  },
+  searchWrapper: {
+    paddingHorizontal: Spacing.lg,
   },
 });
