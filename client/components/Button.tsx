@@ -9,13 +9,14 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Spacing, Typography } from "@/constants/theme";
 
 interface ButtonProps {
   onPress?: () => void;
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  variant?: "primary" | "secondary" | "outline";
 }
 
 const springConfig: WithSpringConfig = {
@@ -33,6 +34,7 @@ export function Button({
   children,
   style,
   disabled = false,
+  variant = "primary",
 }: ButtonProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -53,6 +55,32 @@ export function Button({
     }
   };
 
+  const getBackgroundColor = () => {
+    switch (variant) {
+      case "primary":
+        return theme.primary;
+      case "secondary":
+        return theme.backgroundSecondary;
+      case "outline":
+        return "transparent";
+      default:
+        return theme.primary;
+    }
+  };
+
+  const getTextColor = () => {
+    switch (variant) {
+      case "primary":
+        return theme.buttonText;
+      case "secondary":
+        return theme.text;
+      case "outline":
+        return theme.primary;
+      default:
+        return theme.buttonText;
+    }
+  };
+
   return (
     <AnimatedPressable
       onPress={disabled ? undefined : onPress}
@@ -62,8 +90,10 @@ export function Button({
       style={[
         styles.button,
         {
-          backgroundColor: theme.link,
+          backgroundColor: getBackgroundColor(),
           opacity: disabled ? 0.5 : 1,
+          borderWidth: variant === "outline" ? 1 : 0,
+          borderColor: theme.primary,
         },
         style,
         animatedStyle,
@@ -71,7 +101,7 @@ export function Button({
     >
       <ThemedText
         type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
+        style={[styles.buttonText, { color: getTextColor() }]}
       >
         {children}
       </ThemedText>
@@ -85,8 +115,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing["2xl"],
   },
   buttonText: {
     fontWeight: "600",
+    fontFamily: Typography.body.fontFamily,
   },
 });

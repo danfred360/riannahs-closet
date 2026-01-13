@@ -18,6 +18,7 @@ interface CardProps {
   children?: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
 const springConfig: WithSpringConfig = {
@@ -53,6 +54,7 @@ export function Card({
   children,
   onPress,
   style,
+  disabled = false,
 }: CardProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -64,18 +66,23 @@ export function Card({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, springConfig);
+    if (onPress && !disabled) {
+      scale.value = withSpring(0.98, springConfig);
+    }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    if (onPress && !disabled) {
+      scale.value = withSpring(1, springConfig);
+    }
   };
 
   return (
     <AnimatedPressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      disabled={disabled || !onPress}
       style={[
         styles.card,
         {
@@ -86,12 +93,12 @@ export function Card({
       ]}
     >
       {title ? (
-        <ThemedText type="h4" style={styles.cardTitle}>
+        <ThemedText type="subheading" style={styles.cardTitle}>
           {title}
         </ThemedText>
       ) : null}
       {description ? (
-        <ThemedText type="small" style={styles.cardDescription}>
+        <ThemedText type="caption" style={styles.cardDescription}>
           {description}
         </ThemedText>
       ) : null}
@@ -102,11 +109,11 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius["2xl"],
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.sm,
   },
   cardTitle: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   cardDescription: {
     opacity: 0.7,

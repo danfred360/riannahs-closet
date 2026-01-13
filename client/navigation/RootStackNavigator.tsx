@@ -1,12 +1,16 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import ModalScreen from "@/screens/ModalScreen";
+import ItemDetailScreen from "@/screens/ItemDetailScreen";
+import AddEditItemScreen from "@/screens/AddEditItemScreen";
+import OutfitBuilderScreen from "@/screens/OutfitBuilderScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type RootStackParamList = {
   Main: undefined;
-  Modal: undefined;
+  ItemDetail: { itemId: string };
+  AddEditItem: { itemId?: string };
+  OutfitBuilder: { outfitId?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,11 +26,27 @@ export default function RootStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Modal"
-        component={ModalScreen}
+        name="ItemDetail"
+        component={ItemDetailScreen}
         options={{
           presentation: "modal",
-          headerTitle: "Modal",
+          headerTitle: "Item Details",
+        }}
+      />
+      <Stack.Screen
+        name="AddEditItem"
+        component={AddEditItemScreen}
+        options={{
+          presentation: "modal",
+          headerTitle: "Add Item",
+        }}
+      />
+      <Stack.Screen
+        name="OutfitBuilder"
+        component={OutfitBuilderScreen}
+        options={{
+          presentation: "modal",
+          headerTitle: "Create Outfit",
         }}
       />
     </Stack.Navigator>
