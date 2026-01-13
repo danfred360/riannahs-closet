@@ -20,6 +20,7 @@ export interface Outfit {
   id: string;
   name: string;
   itemIds: string[];
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }

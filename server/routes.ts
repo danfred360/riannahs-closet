@@ -176,6 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const outfits = await storage.getOutfits(req.userId!);
       const formattedOutfits = outfits.map((outfit) => ({
         ...outfit,
+        tags: outfit.tags || [],
         createdAt: outfit.createdAt.toISOString(),
         updatedAt: outfit.updatedAt.toISOString(),
       }));
@@ -194,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({
         ...outfit,
+        tags: outfit.tags || [],
         createdAt: outfit.createdAt.toISOString(),
         updatedAt: outfit.updatedAt.toISOString(),
       });
@@ -213,6 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const outfit = await storage.createOutfit(req.userId!, parsed.data);
       res.status(201).json({
         ...outfit,
+        tags: outfit.tags || [],
         createdAt: outfit.createdAt.toISOString(),
         updatedAt: outfit.updatedAt.toISOString(),
       });
@@ -230,6 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({
         ...outfit,
+        tags: outfit.tags || [],
         createdAt: outfit.createdAt.toISOString(),
         updatedAt: outfit.updatedAt.toISOString(),
       });

@@ -18,6 +18,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { CategoryFilter } from "@/components/CategoryFilter";
+import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, ClothingCategory, Outfit } from "@/lib/types";
 import {
@@ -44,6 +45,8 @@ export default function OutfitBuilderScreen() {
 
   const [name, setName] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [filterCategory, setFilterCategory] = useState<
     ClothingCategory | "all"
@@ -62,6 +65,7 @@ export default function OutfitBuilderScreen() {
         if (outfit) {
           setName(outfit.name);
           setSelectedItemIds(outfit.itemIds);
+          setTags(outfit.tags || []);
           setOriginalCreatedAt(outfit.createdAt);
         }
       }
@@ -101,6 +105,19 @@ export default function OutfitBuilderScreen() {
     return name.trim() && selectedItemIds.length > 0;
   };
 
+  const handleAddTag = () => {
+    const tag = newTag.trim().toLowerCase();
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      setNewTag("");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
   const handleSave = async () => {
     if (!canSave()) return;
 
@@ -111,6 +128,7 @@ export default function OutfitBuilderScreen() {
           id: route.params!.outfitId!,
           name: name.trim(),
           itemIds: selectedItemIds,
+          tags,
           createdAt: originalCreatedAt,
           updatedAt: new Date().toISOString(),
         });
@@ -118,6 +136,7 @@ export default function OutfitBuilderScreen() {
         await addOutfit({
           name: name.trim(),
           itemIds: selectedItemIds,
+          tags,
         });
       }
 
@@ -223,6 +242,48 @@ export default function OutfitBuilderScreen() {
           placeholder="e.g., Casual Friday"
           placeholderTextColor={theme.textSecondary}
         />
+      </View>
+
+      <View style={styles.tagsSection}>
+        <ThemedText type="caption" style={styles.label}>
+          Tags (optional)
+        </ThemedText>
+        <View style={styles.tagInputRow}>
+          <TextInput
+            style={[
+              styles.tagInput,
+              {
+                color: theme.text,
+                backgroundColor: theme.backgroundSecondary,
+                fontFamily: Typography.body.fontFamily,
+              },
+            ]}
+            value={newTag}
+            onChangeText={setNewTag}
+            placeholder="Add a tag..."
+            placeholderTextColor={theme.textSecondary}
+            onSubmitEditing={handleAddTag}
+            returnKeyType="done"
+          />
+          <Pressable
+            style={[styles.addTagButton, { backgroundColor: theme.primary }]}
+            onPress={handleAddTag}
+          >
+            <Feather name="plus" size={20} color={theme.buttonText} />
+          </Pressable>
+        </View>
+        {tags.length > 0 ? (
+          <View style={styles.tagsRow}>
+            {tags.map((tag) => (
+              <TagChip
+                key={tag}
+                label={tag}
+                size="small"
+                onRemove={() => handleRemoveTag(tag)}
+              />
+            ))}
+          </View>
+        ) : null}
       </View>
 
       {selectedItems.length > 0 ? (
@@ -333,6 +394,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.sm,
     fontSize: 16,
+  },
+  tagsSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  tagInputRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  tagInput: {
+    flex: 1,
+    height: Spacing.inputHeight,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    fontSize: 16,
+  },
+  addTagButton: {
+    width: Spacing.inputHeight,
+    height: Spacing.inputHeight,
+    borderRadius: BorderRadius.sm,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
   },
   previewSection: {
     paddingHorizontal: Spacing.lg,

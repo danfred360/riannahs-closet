@@ -14,6 +14,7 @@ import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -102,17 +103,50 @@ export default function AddEditItemScreen() {
     return name.trim() && imageUri;
   };
 
+  const convertToBase64 = async (uri: string): Promise<string> => {
+    if (uri.startsWith("data:")) {
+      return uri;
+    }
+    
+    if (Platform.OS === "web") {
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return uri;
+      }
+    }
+    
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: "base64",
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch {
+      return uri;
+    }
+  };
+
   const handlePickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.6,
+        base64: Platform.OS === "web",
       });
 
       if (!result.canceled && result.assets[0]) {
-        setImageUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        const base64Uri = await convertToBase64(uri);
+        setImageUri(base64Uri);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
@@ -134,11 +168,13 @@ export default function AddEditItemScreen() {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.6,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setImageUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        const base64Uri = await convertToBase64(uri);
+        setImageUri(base64Uri);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
@@ -164,12 +200,14 @@ export default function AddEditItemScreen() {
 
     setSaving(true);
     try {
+      const finalImageUri = await convertToBase64(imageUri);
+      
       if (isEditing) {
         await updateClothingItem({
           id: route.params!.itemId!,
           name: name.trim(),
           category,
-          imageUri,
+          imageUri: finalImageUri,
           tags,
           createdAt: originalCreatedAt,
           updatedAt: new Date().toISOString(),
@@ -178,7 +216,7 @@ export default function AddEditItemScreen() {
         await addClothingItem({
           name: name.trim(),
           category,
-          imageUri,
+          imageUri: finalImageUri,
           tags,
         });
       }

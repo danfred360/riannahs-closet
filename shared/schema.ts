@@ -47,6 +47,7 @@ export const outfits = pgTable("outfits", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  tags: text("tags").array().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -140,6 +141,7 @@ export const insertOutfitSchema = createInsertSchema(outfits).omit({
   updatedAt: true,
 }).extend({
   itemIds: z.array(z.string()),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 export const insertPlannedOutfitSchema = createInsertSchema(plannedOutfits).omit({
