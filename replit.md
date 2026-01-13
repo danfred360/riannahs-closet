@@ -2,9 +2,9 @@
 
 ## Overview
 
-Riannah's Closet is a personal wardrobe management mobile app built with Expo and React Native. It allows users to catalog clothing items, create outfit combinations, and visually plan daily looks. The app features an organic/botanical aesthetic with hand-drawn floral illustrations, targeting a "garden journal meets fashion lookbook" feel.
+Riannah's Closet is a cloud-based wardrobe management mobile app built with Expo and React Native. It allows users to catalog clothing items, create outfit combinations, and visually plan daily looks. The app features an organic/botanical aesthetic with hand-drawn floral illustrations, targeting a "garden journal meets fashion lookbook" feel.
 
-The app is single-user (no authentication) with local data persistence, designed as a personal style diary rather than a social fashion platform.
+The app supports multi-user authentication with PostgreSQL database storage, designed for both web and mobile (iOS/Android) platforms with cloud-synced data.
 
 ## User Preferences
 
@@ -45,6 +45,11 @@ Preferred communication style: Simple, everyday language.
 
 4. **Shared types**: Core domain types (ClothingItem, Outfit, etc.) defined in `client/lib/types.ts`
    - Database schema in `shared/schema.ts` uses Drizzle ORM with Zod validation
+
+5. **API versioning**: All API endpoints are prefixed with `/api/v1/`
+   - Rationale: Ensures backward compatibility when mobile app is in App Store review
+   - Pattern: Server routes and client API calls all use versioned paths
+   - Future breaking changes can be introduced under `/api/v2/` while maintaining v1 for existing mobile app users
 
 ## External Dependencies
 
