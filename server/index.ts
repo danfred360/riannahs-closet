@@ -308,9 +308,11 @@ function setupErrorHandler(app: express.Application) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
-  configureExpoAndLanding(app);
-
+  // Register API routes BEFORE static file serving and SPA catch-all
   const server = await registerRoutes(app);
+
+  // Static files and SPA catch-all come after API routes
+  configureExpoAndLanding(app);
 
   setupErrorHandler(app);
 
