@@ -6,7 +6,7 @@ import { insertUserSchema, insertClothingItemSchema, insertOutfitSchema, insertP
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/v1/auth/register", async (req, res) => {
     try {
       const parsed = insertUserSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/v1/auth/login", async (req, res) => {
     try {
       const parsed = insertUserSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/auth/me", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/auth/me", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const user = await storage.getUser(req.userId!);
       if (!user) {
@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/profile", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.put("/api/v1/profile", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const { displayName, avatarUri } = req.body;
       const user = await storage.updateUserProfile(req.userId!, displayName, avatarUri);
@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/items", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/items", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const items = await storage.getClothingItems(req.userId!);
       const formattedItems = items.map((item) => ({
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const item = await storage.getClothingItem(req.userId!, req.params.id);
       if (!item) {
@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/items", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.post("/api/v1/items", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const parsed = insertClothingItemSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.put("/api/v1/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const item = await storage.updateClothingItem(req.userId!, req.params.id, req.body);
       if (!item) {
@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.delete("/api/v1/items/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       await storage.deleteClothingItem(req.userId!, req.params.id);
       res.status(204).send();
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/outfits", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/outfits", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const outfits = await storage.getOutfits(req.userId!);
       const formattedOutfits = outfits.map((outfit) => ({
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const outfit = await storage.getOutfit(req.userId!, req.params.id);
       if (!outfit) {
@@ -205,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/outfits", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.post("/api/v1/outfits", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const parsed = insertOutfitSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.put("/api/v1/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const outfit = await storage.updateOutfit(req.userId!, req.params.id, req.body);
       if (!outfit) {
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.delete("/api/v1/outfits/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       await storage.deleteOutfit(req.userId!, req.params.id);
       res.status(204).send();
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/planner", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.get("/api/v1/planner", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const plannedOutfits = await storage.getPlannedOutfits(req.userId!);
       res.json(plannedOutfits);
@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/planner", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.post("/api/v1/planner", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const parsed = insertPlannedOutfitSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -278,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/planner/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+  app.delete("/api/v1/planner/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       await storage.removePlannedOutfit(req.userId!, req.params.id);
       res.status(204).send();

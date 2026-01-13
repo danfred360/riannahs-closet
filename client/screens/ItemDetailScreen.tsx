@@ -65,7 +65,7 @@ export default function ItemDetailScreen() {
   const performDelete = async () => {
     try {
       await deleteClothingItem(route.params.itemId);
-      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/items"] });
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }

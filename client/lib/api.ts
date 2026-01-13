@@ -40,18 +40,18 @@ async function apiRequest<T>(
 }
 
 export async function getClothingItems(): Promise<ClothingItem[]> {
-  return apiRequest<ClothingItem[]>("/api/items");
+  return apiRequest<ClothingItem[]>("/api/v1/items");
 }
 
 export async function addClothingItem(item: Omit<ClothingItem, "id" | "createdAt" | "updatedAt">): Promise<ClothingItem> {
-  return apiRequest<ClothingItem>("/api/items", {
+  return apiRequest<ClothingItem>("/api/v1/items", {
     method: "POST",
     body: JSON.stringify(item),
   });
 }
 
 export async function updateClothingItem(item: ClothingItem): Promise<ClothingItem> {
-  return apiRequest<ClothingItem>(`/api/items/${item.id}`, {
+  return apiRequest<ClothingItem>(`/api/v1/items/${item.id}`, {
     method: "PUT",
     body: JSON.stringify({
       name: item.name,
@@ -63,24 +63,24 @@ export async function updateClothingItem(item: ClothingItem): Promise<ClothingIt
 }
 
 export async function deleteClothingItem(itemId: string): Promise<void> {
-  await apiRequest<void>(`/api/items/${itemId}`, {
+  await apiRequest<void>(`/api/v1/items/${itemId}`, {
     method: "DELETE",
   });
 }
 
 export async function getOutfits(): Promise<Outfit[]> {
-  return apiRequest<Outfit[]>("/api/outfits");
+  return apiRequest<Outfit[]>("/api/v1/outfits");
 }
 
 export async function addOutfit(outfit: Omit<Outfit, "id" | "createdAt" | "updatedAt">): Promise<Outfit> {
-  return apiRequest<Outfit>("/api/outfits", {
+  return apiRequest<Outfit>("/api/v1/outfits", {
     method: "POST",
     body: JSON.stringify(outfit),
   });
 }
 
 export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
-  return apiRequest<Outfit>(`/api/outfits/${outfit.id}`, {
+  return apiRequest<Outfit>(`/api/v1/outfits/${outfit.id}`, {
     method: "PUT",
     body: JSON.stringify({
       name: outfit.name,
@@ -90,30 +90,30 @@ export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
 }
 
 export async function deleteOutfit(outfitId: string): Promise<void> {
-  await apiRequest<void>(`/api/outfits/${outfitId}`, {
+  await apiRequest<void>(`/api/v1/outfits/${outfitId}`, {
     method: "DELETE",
   });
 }
 
 export async function getPlannedOutfits(): Promise<PlannedOutfit[]> {
-  return apiRequest<PlannedOutfit[]>("/api/planner");
+  return apiRequest<PlannedOutfit[]>("/api/v1/planner");
 }
 
 export async function planOutfit(date: string, outfitId: string): Promise<PlannedOutfit> {
-  return apiRequest<PlannedOutfit>("/api/planner", {
+  return apiRequest<PlannedOutfit>("/api/v1/planner", {
     method: "POST",
     body: JSON.stringify({ date, outfitId }),
   });
 }
 
 export async function removePlannedOutfit(planId: string): Promise<void> {
-  await apiRequest<void>(`/api/planner/${planId}`, {
+  await apiRequest<void>(`/api/v1/planner/${planId}`, {
     method: "DELETE",
   });
 }
 
 export async function getUserProfile(): Promise<UserProfile> {
-  const user = await apiRequest<{ displayName: string | null; avatarUri: string | null }>("/api/auth/me");
+  const user = await apiRequest<{ displayName: string | null; avatarUri: string | null }>("/api/v1/auth/me");
   return {
     displayName: user.displayName || "",
     avatarUri: user.avatarUri,
@@ -121,7 +121,7 @@ export async function getUserProfile(): Promise<UserProfile> {
 }
 
 export async function saveUserProfile(profile: UserProfile): Promise<void> {
-  await apiRequest<void>("/api/profile", {
+  await apiRequest<void>("/api/v1/profile", {
     method: "PUT",
     body: JSON.stringify(profile),
   });

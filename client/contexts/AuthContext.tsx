@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async (authToken: string) => {
     try {
-      const response = await fetch(new URL("/api/auth/me", getApiUrl()).toString(), {
+      const response = await fetch(new URL("/api/v1/auth/me", getApiUrl()).toString(), {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     try {
       const apiUrl = getApiUrl();
-      const loginUrl = new URL("/api/auth/login", apiUrl).toString();
+      const loginUrl = new URL("/api/v1/auth/login", apiUrl).toString();
       console.log("Login attempt to:", loginUrl, "Platform:", Platform.OS);
       
       const response = await fetch(loginUrl, {
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (username: string, password: string) => {
     try {
-      const response = await fetch(new URL("/api/auth/register", getApiUrl()).toString(), {
+      const response = await fetch(new URL("/api/v1/auth/register", getApiUrl()).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return;
 
     try {
-      const response = await fetch(new URL("/api/profile", getApiUrl()).toString(), {
+      const response = await fetch(new URL("/api/v1/profile", getApiUrl()).toString(), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
