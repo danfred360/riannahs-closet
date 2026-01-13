@@ -177,9 +177,11 @@ const styles = StyleSheet.create({
   row: {
     gap: Spacing.md,
     marginBottom: Spacing.md,
+    justifyContent: "center",
   },
   gridItem: {
     flex: 1,
+    maxWidth: 200,
   },
   searchContainer: {
     flexDirection: "row",
