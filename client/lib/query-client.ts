@@ -6,19 +6,25 @@ import { Platform } from "react-native";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
+  // On web, use relative URLs so requests go to the same origin
+  // This ensures the built app works on any domain (dev, staging, production)
+  if (Platform.OS === "web") {
+    // In browser, use empty string for relative URLs to current origin
+    if (typeof window !== "undefined") {
+      return window.location.origin + "/";
+    }
+    return "/";
+  }
+
+  // Mobile needs the full URL with domain
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
   if (!host) {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
   }
 
-  // Use the domain with port as configured
-  // Mobile devices need access to port 5000 - if blocked by network, user should try mobile data
   let url = new URL(`https://${host}`);
-  
-  if (Platform.OS !== "web") {
-    console.log("Mobile API URL:", url.href);
-  }
+  console.log("Mobile API URL:", url.href);
 
   return url.href;
 }
