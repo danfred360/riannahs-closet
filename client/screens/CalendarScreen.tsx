@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,6 +14,8 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+
+const MAX_CALENDAR_WIDTH = 480;
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
@@ -65,6 +68,8 @@ export default function CalendarScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > 600;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -183,6 +188,7 @@ export default function CalendarScreen() {
           {
             paddingTop: headerHeight + Spacing.xl,
             paddingBottom: tabBarHeight + Spacing.xl,
+            alignItems: isWideScreen ? "center" : "stretch",
           },
         ]}
         refreshControl={
@@ -194,6 +200,7 @@ export default function CalendarScreen() {
           />
         }
       >
+        <View style={[styles.contentContainer, isWideScreen && { maxWidth: MAX_CALENDAR_WIDTH }]}>
         <View style={styles.calendarHeader}>
           <Pressable onPress={handlePreviousMonth} hitSlop={12}>
             <Feather name="chevron-left" size={24} color={theme.text} />
@@ -350,6 +357,7 @@ export default function CalendarScreen() {
             </Button>
           )}
         </View>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -360,6 +368,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+  },
+  contentContainer: {
+    width: "100%",
     paddingHorizontal: Spacing.lg,
   },
   calendarHeader: {
