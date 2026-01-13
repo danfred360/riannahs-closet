@@ -12,7 +12,7 @@ import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { SkeletonGrid } from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem } from "@/lib/types";
-import { getOutfits, getClothingItems } from "@/lib/storage";
+import { getOutfits, getClothingItems } from "@/lib/api";
 import { Spacing } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 

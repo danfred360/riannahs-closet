@@ -26,8 +26,7 @@ import {
   addOutfit,
   updateOutfit,
   deleteOutfit,
-  generateId,
-} from "@/lib/storage";
+} from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -107,19 +106,19 @@ export default function OutfitBuilderScreen() {
 
     setSaving(true);
     try {
-      const now = new Date().toISOString();
-      const outfit: Outfit = {
-        id: isEditing ? route.params!.outfitId! : generateId(),
-        name: name.trim(),
-        itemIds: selectedItemIds,
-        createdAt: isEditing ? originalCreatedAt : now,
-        updatedAt: now,
-      };
-
       if (isEditing) {
-        await updateOutfit(outfit);
+        await updateOutfit({
+          id: route.params!.outfitId!,
+          name: name.trim(),
+          itemIds: selectedItemIds,
+          createdAt: originalCreatedAt,
+          updatedAt: new Date().toISOString(),
+        });
       } else {
-        await addOutfit(outfit);
+        await addOutfit({
+          name: name.trim(),
+          itemIds: selectedItemIds,
+        });
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

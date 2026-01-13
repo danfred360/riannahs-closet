@@ -22,7 +22,8 @@ import {
   saveUserProfile,
   getClothingItems,
   getOutfits,
-} from "@/lib/storage";
+} from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 export default function ProfileScreen() {
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { user, logout } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile>({
     displayName: "Riannah",
@@ -206,6 +208,32 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <View style={styles.section}>
+        <Pressable
+          style={[styles.logoutButton, { backgroundColor: theme.error }]}
+          onPress={() => {
+            Alert.alert(
+              "Sign Out",
+              "Are you sure you want to sign out?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Sign Out",
+                  style: "destructive",
+                  onPress: async () => {
+                    await logout();
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <Feather name="log-out" size={20} color="white" />
+          <ThemedText style={styles.logoutText}>Sign Out</ThemedText>
+        </Pressable>
+      </View>
+
       <Image
         source={require("@/assets/images/botanical-divider.png")}
         style={styles.divider}
@@ -301,5 +329,17 @@ const styles = StyleSheet.create({
   versionText: {
     textAlign: "center",
     opacity: 0.5,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+  },
+  logoutText: {
+    color: "white",
+    fontWeight: "600",
   },
 });

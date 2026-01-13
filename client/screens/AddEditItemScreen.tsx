@@ -29,8 +29,7 @@ import {
   getClothingItems,
   addClothingItem,
   updateClothingItem,
-  generateId,
-} from "@/lib/storage";
+} from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -165,21 +164,23 @@ export default function AddEditItemScreen() {
 
     setSaving(true);
     try {
-      const now = new Date().toISOString();
-      const item: ClothingItem = {
-        id: isEditing ? route.params!.itemId! : generateId(),
-        name: name.trim(),
-        category,
-        imageUri,
-        tags,
-        createdAt: isEditing ? originalCreatedAt : now,
-        updatedAt: now,
-      };
-
       if (isEditing) {
-        await updateClothingItem(item);
+        await updateClothingItem({
+          id: route.params!.itemId!,
+          name: name.trim(),
+          category,
+          imageUri,
+          tags,
+          createdAt: originalCreatedAt,
+          updatedAt: new Date().toISOString(),
+        });
       } else {
-        await addClothingItem(item);
+        await addClothingItem({
+          name: name.trim(),
+          category,
+          imageUri,
+          tags,
+        });
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

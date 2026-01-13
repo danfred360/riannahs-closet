@@ -14,7 +14,7 @@ import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { SkeletonGrid } from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, ClothingCategory } from "@/lib/types";
-import { getClothingItems } from "@/lib/storage";
+import { getClothingItems } from "@/lib/api";
 import { Spacing } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 

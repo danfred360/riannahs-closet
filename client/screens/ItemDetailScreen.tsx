@@ -12,7 +12,7 @@ import { Button } from "@/components/Button";
 import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, CATEGORY_LABELS } from "@/lib/types";
-import { getClothingItems, deleteClothingItem } from "@/lib/storage";
+import { getClothingItems, deleteClothingItem } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 

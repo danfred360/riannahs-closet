@@ -26,8 +26,7 @@ import {
   getPlannedOutfits,
   planOutfit,
   removePlannedOutfit,
-  generateId,
-} from "@/lib/storage";
+} from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -153,11 +152,7 @@ export default function CalendarScreen() {
 
   const handleAssignOutfit = async (outfit: Outfit) => {
     try {
-      await planOutfit({
-        id: generateId(),
-        date: selectedDate,
-        outfitId: outfit.id,
-      });
+      await planOutfit(selectedDate, outfit.id);
       setShowOutfitPicker(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       loadData();
@@ -168,9 +163,11 @@ export default function CalendarScreen() {
 
   const handleRemoveOutfit = async () => {
     try {
-      await removePlannedOutfit(selectedDate);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      loadData();
+      if (selectedPlannedOutfit) {
+        await removePlannedOutfit(selectedPlannedOutfit.id);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        loadData();
+      }
     } catch (error) {
       console.error("Error removing outfit:", error);
     }
