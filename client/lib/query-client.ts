@@ -6,18 +6,24 @@ import { Platform } from "react-native";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // On web, use relative URLs so requests go to the same origin
-  // This ensures the built app works on any domain (dev, staging, production)
-  if (Platform.OS === "web") {
-    // In browser, use empty string for relative URLs to current origin
-    if (typeof window !== "undefined") {
-      return window.location.origin + "/";
+  // EXPO_PUBLIC_DOMAIN is set in development to include the API port (:5000)
+  // In production, it may not be set, so we fall back to relative URLs
+  const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+
+  // On web platform
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    // If EXPO_PUBLIC_DOMAIN is set (development), use it for API calls
+    // This ensures we hit the Express server on port 5000, not Metro on 8081
+    if (expoDomain) {
+      return `https://${expoDomain}/`;
     }
-    return "/";
+    
+    // In production/deployed builds, use relative URLs (same origin)
+    return window.location.origin + "/";
   }
 
   // Mobile needs the full URL with domain
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
+  let host = expoDomain;
 
   if (!host) {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");

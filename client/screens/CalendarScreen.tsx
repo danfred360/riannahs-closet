@@ -201,162 +201,162 @@ export default function CalendarScreen() {
         }
       >
         <View style={[styles.contentContainer, isWideScreen && { maxWidth: MAX_CALENDAR_WIDTH }]}>
-        <View style={styles.calendarHeader}>
-          <Pressable onPress={handlePreviousMonth} hitSlop={12}>
-            <Feather name="chevron-left" size={24} color={theme.text} />
-          </Pressable>
-          <ThemedText type="heading">
-            {MONTHS[month]} {year}
-          </ThemedText>
-          <Pressable onPress={handleNextMonth} hitSlop={12}>
-            <Feather name="chevron-right" size={24} color={theme.text} />
-          </Pressable>
-        </View>
+          <View style={styles.calendarHeader}>
+            <Pressable onPress={handlePreviousMonth} hitSlop={12}>
+              <Feather name="chevron-left" size={24} color={theme.text} />
+            </Pressable>
+            <ThemedText type="heading">
+              {MONTHS[month]} {year}
+            </ThemedText>
+            <Pressable onPress={handleNextMonth} hitSlop={12}>
+              <Feather name="chevron-right" size={24} color={theme.text} />
+            </Pressable>
+          </View>
 
-        <View style={styles.weekHeader}>
-          {DAYS.map((day) => (
-            <View key={day} style={styles.weekDay}>
-              <ThemedText type="caption" style={styles.weekDayText}>
-                {day}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.calendarGrid}>
-          {calendarDays.map((day, index) => {
-            if (day === null) {
-              return <View key={`empty-${index}`} style={styles.dayCell} />;
-            }
-            const dateStr = getDateString(new Date(year, month, day));
-            const isSelected = dateStr === selectedDate;
-            const isToday = dateStr === today;
-            const hasOutfit = !!getPlannedOutfitForDate(dateStr);
-
-            return (
-              <Pressable
-                key={day}
-                style={[
-                  styles.dayCell,
-                  isSelected && { backgroundColor: theme.primary },
-                  isToday && !isSelected && { backgroundColor: theme.backgroundSecondary },
-                ]}
-                onPress={() => handleDatePress(day)}
-              >
-                <ThemedText
-                  type="body"
-                  style={[
-                    styles.dayText,
-                    isSelected && { color: theme.buttonText },
-                  ]}
-                >
+          <View style={styles.weekHeader}>
+            {DAYS.map((day) => (
+              <View key={day} style={styles.weekDay}>
+                <ThemedText type="caption" style={styles.weekDayText}>
                   {day}
                 </ThemedText>
-                {hasOutfit ? (
-                  <View
-                    style={[
-                      styles.outfitDot,
-                      {
-                        backgroundColor: isSelected
-                          ? theme.buttonText
-                          : theme.accent,
-                      },
-                    ]}
-                  />
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={styles.selectedDateSection}>
-          <ThemedText type="subheading" style={styles.selectedDateTitle}>
-            {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </ThemedText>
-
-          {selectedOutfit ? (
-            <Card style={styles.outfitPreview}>
-              <View style={styles.outfitHeader}>
-                <ThemedText type="body" style={styles.outfitName}>
-                  {selectedOutfit.name}
-                </ThemedText>
-                <Pressable onPress={handleRemoveOutfit} hitSlop={8}>
-                  <Feather name="x" size={20} color={theme.textSecondary} />
-                </Pressable>
               </View>
-              <View style={styles.outfitItemsRow}>
-                {selectedOutfitItems.slice(0, 4).map((item) => (
-                  <Image
-                    key={item.id}
-                    source={{ uri: item.imageUri }}
-                    style={styles.outfitItemImage}
-                    contentFit="cover"
-                  />
-                ))}
-              </View>
-            </Card>
-          ) : showOutfitPicker ? (
-            <View style={styles.outfitPicker}>
-              <ThemedText type="caption" style={styles.pickerTitle}>
-                Choose an outfit:
-              </ThemedText>
-              {outfits.length === 0 ? (
-                <ThemedText type="caption">
-                  No outfits yet. Create one first!
-                </ThemedText>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.outfitPickerList}
+            ))}
+          </View>
+
+          <View style={styles.calendarGrid}>
+            {calendarDays.map((day, index) => {
+              if (day === null) {
+                return <View key={`empty-${index}`} style={styles.dayCell} />;
+              }
+              const dateStr = getDateString(new Date(year, month, day));
+              const isSelected = dateStr === selectedDate;
+              const isToday = dateStr === today;
+              const hasOutfit = !!getPlannedOutfitForDate(dateStr);
+
+              return (
+                <Pressable
+                  key={day}
+                  style={[
+                    styles.dayCell,
+                    isSelected && { backgroundColor: theme.primary },
+                    isToday && !isSelected && { backgroundColor: theme.backgroundSecondary },
+                  ]}
+                  onPress={() => handleDatePress(day)}
                 >
-                  {outfits.map((outfit) => (
-                    <Pressable
-                      key={outfit.id}
+                  <ThemedText
+                    type="body"
+                    style={[
+                      styles.dayText,
+                      isSelected && { color: theme.buttonText },
+                    ]}
+                  >
+                    {day}
+                  </ThemedText>
+                  {hasOutfit ? (
+                    <View
                       style={[
-                        styles.outfitPickerItem,
-                        { backgroundColor: theme.backgroundDefault },
+                        styles.outfitDot,
+                        {
+                          backgroundColor: isSelected
+                            ? theme.buttonText
+                            : theme.accent,
+                        },
                       ]}
-                      onPress={() => handleAssignOutfit(outfit)}
-                    >
-                      <View style={styles.outfitPickerImages}>
-                        {items
-                          .filter((item) => outfit.itemIds.includes(item.id))
-                          .slice(0, 2)
-                          .map((item) => (
-                            <Image
-                              key={item.id}
-                              source={{ uri: item.imageUri }}
-                              style={styles.outfitPickerThumb}
-                              contentFit="cover"
-                            />
-                          ))}
-                      </View>
-                      <ThemedText type="small" numberOfLines={1}>
-                        {outfit.name}
-                      </ThemedText>
-                    </Pressable>
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.selectedDateSection}>
+            <ThemedText type="subheading" style={styles.selectedDateTitle}>
+              {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </ThemedText>
+
+            {selectedOutfit ? (
+              <Card style={styles.outfitPreview}>
+                <View style={styles.outfitHeader}>
+                  <ThemedText type="body" style={styles.outfitName}>
+                    {selectedOutfit.name}
+                  </ThemedText>
+                  <Pressable onPress={handleRemoveOutfit} hitSlop={8}>
+                    <Feather name="x" size={20} color={theme.textSecondary} />
+                  </Pressable>
+                </View>
+                <View style={styles.outfitItemsRow}>
+                  {selectedOutfitItems.slice(0, 4).map((item) => (
+                    <Image
+                      key={item.id}
+                      source={{ uri: item.imageUri }}
+                      style={styles.outfitItemImage}
+                      contentFit="cover"
+                    />
                   ))}
-                </ScrollView>
-              )}
-              <Button
-                variant="outline"
-                onPress={() => setShowOutfitPicker(false)}
-                style={styles.cancelButton}
-              >
-                Cancel
+                </View>
+              </Card>
+            ) : showOutfitPicker ? (
+              <View style={styles.outfitPicker}>
+                <ThemedText type="caption" style={styles.pickerTitle}>
+                  Choose an outfit:
+                </ThemedText>
+                {outfits.length === 0 ? (
+                  <ThemedText type="caption">
+                    No outfits yet. Create one first!
+                  </ThemedText>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.outfitPickerList}
+                  >
+                    {outfits.map((outfit) => (
+                      <Pressable
+                        key={outfit.id}
+                        style={[
+                          styles.outfitPickerItem,
+                          { backgroundColor: theme.backgroundDefault },
+                        ]}
+                        onPress={() => handleAssignOutfit(outfit)}
+                      >
+                        <View style={styles.outfitPickerImages}>
+                          {items
+                            .filter((item) => outfit.itemIds.includes(item.id))
+                            .slice(0, 2)
+                            .map((item) => (
+                              <Image
+                                key={item.id}
+                                source={{ uri: item.imageUri }}
+                                style={styles.outfitPickerThumb}
+                                contentFit="cover"
+                              />
+                            ))}
+                        </View>
+                        <ThemedText type="small" numberOfLines={1}>
+                          {outfit.name}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
+                <Button
+                  variant="outline"
+                  onPress={() => setShowOutfitPicker(false)}
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </Button>
+              </View>
+            ) : (
+              <Button onPress={() => setShowOutfitPicker(true)}>
+                Plan an outfit
               </Button>
-            </View>
-          ) : (
-            <Button onPress={() => setShowOutfitPicker(true)}>
-              Plan an outfit
-            </Button>
-          )}
-        </View>
+            )}
+          </View>
         </View>
       </ScrollView>
     </ThemedView>
