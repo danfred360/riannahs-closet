@@ -58,6 +58,7 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: item?.name || "Item Details",
       headerRight: () => (
         <Pressable
           onPress={() =>
@@ -69,7 +70,7 @@ export default function ItemDetailScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, route.params.itemId, theme.text]);
+  }, [navigation, route.params.itemId, theme.text, item?.name]);
 
   const performDelete = async () => {
     try {
@@ -139,8 +140,6 @@ export default function ItemDetailScreen() {
         />
 
         <View style={styles.content}>
-          <ThemedText type="heading">{item.name}</ThemedText>
-
           <View style={styles.categoryRow}>
             <Feather name="folder" size={16} color={theme.textSecondary} />
             <ThemedText type="body" style={{ color: theme.textSecondary }}>

@@ -73,6 +73,7 @@ export default function OutfitDetailScreen() {
 
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: outfit?.name || "Outfit Details",
       headerRight: () => (
         <HeaderButton
           onPress={() =>
@@ -83,7 +84,7 @@ export default function OutfitDetailScreen() {
         </HeaderButton>
       ),
     });
-  }, [navigation, route.params.outfitId, theme.text]);
+  }, [navigation, route.params.outfitId, theme.text, outfit?.name]);
 
   const outfitItems = items.filter((item) => outfit?.itemIds.includes(item.id));
 
@@ -132,8 +133,6 @@ export default function OutfitDetailScreen() {
         </View>
 
         <View style={styles.content}>
-          <ThemedText type="heading">{outfit.name}</ThemedText>
-
           {outfit.tags.length > 0 ? (
             <View style={styles.tagsSection}>
               <ThemedText type="caption" style={styles.sectionLabel}>
@@ -236,12 +235,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    justifyContent: "flex-start",
   },
   itemCard: {
-    width: "30%",
+    width: 100,
     borderRadius: BorderRadius.md,
     overflow: "hidden",
+    backgroundColor: "#f0f0f0",
   },
   itemImage: {
     width: "100%",
