@@ -1,6 +1,8 @@
 import { Client } from "@replit/object-storage";
 
-const BUCKET_NAME = "riannahscloset-bucket-1";
+function getBucketName(): string {
+  return process.env.OBJECT_STORAGE_BUCKET || "riannahscloset-bucket-dev";
+}
 
 let client: Client | null = null;
 

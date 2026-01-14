@@ -76,9 +76,11 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.development]
+OBJECT_STORAGE_BUCKET = "riannahscloset-bucket-dev"
 
 [userenv.production]
 WEB_ONLY = "true"
+OBJECT_STORAGE_BUCKET = "riannahscloset-bucket-1"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-d4171db4-6ced-4be2-98db-a3cdb2f7a268"
