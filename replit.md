@@ -51,6 +51,23 @@ Preferred communication style: Simple, everyday language.
    - Pattern: Server routes and client API calls all use versioned paths
    - Future breaking changes can be introduced under `/api/v2/` while maintaining v1 for existing mobile app users
 
+## TestFlight Setup (Pending)
+
+### Status
+- Apple Developer enrollment: **Pending approval**
+- Expo project ID: `85944140-a9cb-4998-829c-b50296ae7d34`
+- Expo account: danfred360
+
+### Next Steps (after Apple Developer enrollment is approved)
+1. Run locally: `npx eas login` then `npx eas build --platform ios --profile production`
+2. Follow prompts to set up Apple Distribution Certificate
+3. Once credentials are configured, future builds can run from Replit
+
+### Secrets Already Configured
+- EXPO_TOKEN: ✅
+- APPLE_ID: ✅
+- APPLE_APP_SPECIFIC_PASSWORD: ✅
+
 ## External Dependencies
 
 ### Core Services
