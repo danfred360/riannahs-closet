@@ -4,14 +4,19 @@ function getBucketId(): string | undefined {
   return process.env.OBJECT_STORAGE_BUCKET_ID;
 }
 
-let client: Client | null = null;
+let cachedClient: Client | null = null;
+let cachedBucketId: string | undefined = undefined;
 
 function getClient(): Client {
-  if (!client) {
-    const bucketId = getBucketId();
-    client = bucketId ? new Client({ bucketId }) : new Client();
+  const currentBucketId = getBucketId();
+  
+  // Recreate client if bucket ID changed or not initialized
+  if (!cachedClient || cachedBucketId !== currentBucketId) {
+    console.log(`Object Storage: Using bucket ID: ${currentBucketId || 'default'}`);
+    cachedClient = currentBucketId ? new Client({ bucketId: currentBucketId }) : new Client();
+    cachedBucketId = currentBucketId;
   }
-  return client;
+  return cachedClient;
 }
 
 export function isUserImage(userId: string, key: string): boolean {
