@@ -24,7 +24,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
           "displayName": { "type": "string", "nullable": true },
           "avatarUri": { "type": "string", "nullable": true }
         }
@@ -147,10 +147,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["username", "password"],
+                "required": ["email", "password"],
                 "properties": {
-                  "username": { "type": "string" },
-                  "password": { "type": "string" }
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "displayName": { "type": "string", "nullable": true }
                 }
               }
             }
@@ -174,7 +175,7 @@
             }
           },
           "409": {
-            "description": "Username already exists",
+            "description": "Email already exists",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -194,9 +195,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["username", "password"],
+                "required": ["email", "password"],
                 "properties": {
-                  "username": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
                   "password": { "type": "string" }
                 }
               }
