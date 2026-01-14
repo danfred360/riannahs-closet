@@ -4,12 +4,12 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, Outfit, CATEGORY_LABELS } from "@/lib/types";
 import { getClothingItems, deleteClothingItem, getOutfits } from "@/lib/api";
@@ -132,8 +132,8 @@ export default function ItemDetailScreen() {
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
       >
-        <Image
-          source={{ uri: item.imageUri }}
+        <ObjectStorageImage
+          imageUri={item.imageUri}
           style={styles.image}
           contentFit="cover"
           transition={200}

@@ -12,11 +12,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 const MAX_CALENDAR_WIDTH = 480;
 import { ThemedView } from "@/components/ThemedView";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/Card";
@@ -313,9 +313,9 @@ export default function CalendarScreen() {
                       </View>
                       <View style={styles.outfitItemsRow}>
                         {outfitItems.slice(0, 4).map((item) => (
-                          <Image
+                          <ObjectStorageImage
                             key={item.id}
-                            source={{ uri: item.imageUri }}
+                            imageUri={item.imageUri}
                             style={styles.outfitItemImage}
                             contentFit="cover"
                           />
@@ -356,9 +356,9 @@ export default function CalendarScreen() {
                             .filter((item) => outfit.itemIds.includes(item.id))
                             .slice(0, 2)
                             .map((item) => (
-                              <Image
+                              <ObjectStorageImage
                                 key={item.id}
-                                source={{ uri: item.imageUri }}
+                                imageUri={item.imageUri}
                                 style={styles.outfitPickerThumb}
                                 contentFit="cover"
                               />

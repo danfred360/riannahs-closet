@@ -5,10 +5,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
 import { getOutfits, getClothingItems, getPlannedOutfits } from "@/lib/api";
@@ -120,8 +120,8 @@ export default function OutfitDetailScreen() {
               style={styles.itemCard}
               onPress={() => navigation.navigate("ItemDetail", { itemId: item.id })}
             >
-              <Image
-                source={{ uri: item.imageUri }}
+              <ObjectStorageImage
+                imageUri={item.imageUri}
                 style={styles.itemImage}
                 contentFit="contain"
                 transition={200}

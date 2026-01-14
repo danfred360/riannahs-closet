@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, Pressable, View } from "react-native";
-import { Image } from "expo-image";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, CATEGORY_LABELS } from "@/lib/types";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -53,8 +53,8 @@ export function ClothingItemCard({
         animatedStyle,
       ]}
     >
-      <Image
-        source={{ uri: item.imageUri }}
+      <ObjectStorageImage
+        imageUri={item.imageUri}
         style={styles.image}
         contentFit="cover"
         transition={200}

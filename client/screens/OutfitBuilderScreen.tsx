@@ -12,13 +12,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { TagChip } from "@/components/TagChip";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, ClothingCategory, Outfit } from "@/lib/types";
 import {
@@ -203,8 +203,8 @@ export default function OutfitBuilderScreen() {
         ]}
         onPress={() => toggleItem(item.id)}
       >
-        <Image
-          source={{ uri: item.imageUri }}
+        <ObjectStorageImage
+          imageUri={item.imageUri}
           style={styles.itemImage}
           contentFit="cover"
         />
@@ -302,8 +302,8 @@ export default function OutfitBuilderScreen() {
                 style={styles.previewItem}
                 onPress={() => toggleItem(item.id)}
               >
-                <Image
-                  source={{ uri: item.imageUri }}
+                <ObjectStorageImage
+                  imageUri={item.imageUri}
                   style={styles.previewImage}
                   contentFit="cover"
                 />

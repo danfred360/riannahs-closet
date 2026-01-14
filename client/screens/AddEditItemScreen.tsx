@@ -15,6 +15,7 @@ import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +33,8 @@ import {
   getClothingItems,
   addClothingItem,
   updateClothingItem,
+  uploadImage,
+  generateId,
 } from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -226,7 +229,15 @@ export default function AddEditItemScreen() {
 
     setSaving(true);
     try {
-      const finalImageUri = await convertToBase64(imageUri);
+      let finalImageUri = imageUri;
+      
+      // Check if this is a new base64 image (not already an object storage key)
+      if (imageUri.startsWith("data:")) {
+        // Upload to object storage
+        const fileName = `${generateId()}.jpg`;
+        const uploadResult = await uploadImage(imageUri, fileName);
+        finalImageUri = uploadResult.key;
+      }
       
       if (isEditing) {
         await updateClothingItem({
@@ -274,8 +285,8 @@ export default function AddEditItemScreen() {
         <View style={[styles.imageSection, isWideScreen && { alignItems: "center" }]}>
           {imageUri ? (
             <Pressable onPress={handlePickImage}>
-              <Image
-                source={{ uri: imageUri }}
+              <ObjectStorageImage
+                imageUri={imageUri}
                 style={[
                   styles.image,
                   { 

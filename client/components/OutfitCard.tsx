@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, Pressable, View } from "react-native";
-import { Image } from "expo-image";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem } from "@/lib/types";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -60,9 +60,9 @@ export function OutfitCard({
     >
       <View style={styles.imageGrid}>
         {previewItems.map((item, idx) => (
-          <Image
+          <ObjectStorageImage
             key={item.id}
-            source={{ uri: item.imageUri }}
+            imageUri={item.imageUri}
             style={[
               styles.gridImage,
               previewItems.length === 1 && styles.singleImage,
