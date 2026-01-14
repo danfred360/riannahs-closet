@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -20,11 +20,17 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+const ITEM_WIDTH = 160;
+const ITEM_GAP = 12;
+
 export default function WardrobeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  
+  const numColumns = Math.max(2, Math.floor((windowWidth - Spacing.lg * 2 + ITEM_GAP) / (ITEM_WIDTH + ITEM_GAP)));
 
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,10 +135,11 @@ export default function WardrobeScreen() {
   return (
     <ThemedView style={styles.container}>
       <FlatList
+        key={`wardrobe-grid-${numColumns}`}
         data={filteredItems}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={2}
+        numColumns={numColumns}
         columnWrapperStyle={styles.row}
         contentContainerStyle={[
           styles.listContent,
@@ -190,7 +197,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   gridItem: {
-    flex: 1,
-    maxWidth: 200,
+    width: ITEM_WIDTH,
+    maxWidth: ITEM_WIDTH,
   },
 });

@@ -43,12 +43,12 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
       const [userProfile, items, outfits] = await Promise.all([
-        getUserProfile(),
-        getClothingItems(),
-        getOutfits(),
+        getUserProfile(forceRefresh),
+        getClothingItems(forceRefresh),
+        getOutfits(forceRefresh),
       ]);
       // Use username from auth context if displayName is not set
       const displayName = userProfile.displayName || user?.username || "User";
@@ -61,11 +61,18 @@ export default function ProfileScreen() {
   }, [user?.username]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData().then(() => {
+      Promise.all([getUserProfile(true), getClothingItems(true), getOutfits(true)]).then(([freshProfile, freshItems, freshOutfits]) => {
+        const displayName = freshProfile.displayName || user?.username || "User";
+        setProfile({ ...freshProfile, displayName });
+        setItemCount(freshItems.length);
+        setOutfitCount(freshOutfits.length);
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadData);
+    const unsubscribe = navigation.addListener("focus", () => loadData());
     return unsubscribe;
   }, [navigation, loadData]);
 

@@ -456,6 +456,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: Spacing.sm,
+    padding: Spacing.md,
+    minWidth: 120,
   },
   form: {
     paddingHorizontal: Spacing.lg,
