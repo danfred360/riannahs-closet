@@ -149,13 +149,21 @@ export default function AddEditItemScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.6,
-        base64: Platform.OS === "web",
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        const base64Uri = await convertToBase64(uri);
-        setImageUri(base64Uri);
+        const asset = result.assets[0];
+        let finalUri: string;
+        
+        if (asset.base64) {
+          const mimeType = asset.mimeType || "image/jpeg";
+          finalUri = `data:${mimeType};base64,${asset.base64}`;
+        } else {
+          finalUri = await convertToBase64(asset.uri);
+        }
+        
+        setImageUri(finalUri);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
@@ -178,12 +186,21 @@ export default function AddEditItemScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.6,
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        const base64Uri = await convertToBase64(uri);
-        setImageUri(base64Uri);
+        const asset = result.assets[0];
+        let finalUri: string;
+        
+        if (asset.base64) {
+          const mimeType = asset.mimeType || "image/jpeg";
+          finalUri = `data:${mimeType};base64,${asset.base64}`;
+        } else {
+          finalUri = await convertToBase64(asset.uri);
+        }
+        
+        setImageUri(finalUri);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {

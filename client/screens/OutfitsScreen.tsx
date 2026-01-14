@@ -70,9 +70,22 @@ export default function OutfitsScreen() {
     return unsubscribe;
   }, [navigation, loadData]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    loadData();
+    try {
+      const [outfitData, itemData] = await Promise.all([
+        getOutfits(true),
+        getClothingItems(true),
+      ]);
+      setOutfits(outfitData.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+      setItems(itemData);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleAddOutfit = () => {

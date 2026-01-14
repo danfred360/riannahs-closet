@@ -57,9 +57,18 @@ export default function WardrobeScreen() {
     return unsubscribe;
   }, [navigation, loadItems]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    loadItems();
+    try {
+      const clothingItems = await getClothingItems(true);
+      setItems(clothingItems.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+    } catch (error) {
+      console.error("Error refreshing items:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const filteredItems = items.filter((item) => {

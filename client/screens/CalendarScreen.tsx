@@ -107,9 +107,22 @@ export default function CalendarScreen() {
     return unsubscribe;
   }, [navigation, loadData]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    loadData();
+    try {
+      const [outfitData, itemData, plannedData] = await Promise.all([
+        getOutfits(true),
+        getClothingItems(true),
+        getPlannedOutfits(true),
+      ]);
+      setOutfits(outfitData);
+      setItems(itemData);
+      setPlannedOutfits(plannedData);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const year = currentDate.getFullYear();
