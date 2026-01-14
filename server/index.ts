@@ -303,7 +303,32 @@ function setupErrorHandler(app: express.Application) {
   });
 }
 
+function setupDomainRedirect(app: express.Application) {
+  // Only redirect in production
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+
+  const customDomain = "riannahscloset.com";
+
+  app.use((req, res, next) => {
+    const host = req.header("x-forwarded-host") || req.get("host") || "";
+    
+    // Redirect replit.app domains to custom domain
+    if (host.endsWith(".replit.app") || host.endsWith(".repl.co")) {
+      const protocol = req.header("x-forwarded-proto") || "https";
+      const redirectUrl = `${protocol}://${customDomain}${req.originalUrl}`;
+      return res.redirect(301, redirectUrl);
+    }
+    
+    next();
+  });
+
+  log(`Domain redirect enabled: *.replit.app -> ${customDomain}`);
+}
+
 (async () => {
+  setupDomainRedirect(app);
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);
