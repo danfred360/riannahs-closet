@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, notInArray, sql } from "drizzle-orm";
 import {
   users,
   clothingItems,
@@ -101,9 +101,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteClothingItem(userId: string, itemId: string): Promise<boolean> {
-    const result = await db
+    await db
       .delete(clothingItems)
       .where(and(eq(clothingItems.id, itemId), eq(clothingItems.userId, userId)));
+    
+    // Clean up any outfits that now have zero items
+    const userOutfits = await db.select().from(outfits).where(eq(outfits.userId, userId));
+    
+    for (const outfit of userOutfits) {
+      const remainingItems = await db
+        .select()
+        .from(outfitItems)
+        .where(eq(outfitItems.outfitId, outfit.id));
+      
+      if (remainingItems.length === 0) {
+        await db.delete(outfits).where(eq(outfits.id, outfit.id));
+      }
+    }
+    
     return true;
   }
 
