@@ -53,15 +53,20 @@ export async function getImageUrl(key: string): Promise<string | null> {
   const client = getClient();
   
   try {
-    const { ok, value } = await client.downloadAsBytes(key);
-    if (!ok || !value) {
+    console.log(`Downloading image with key: ${key}`);
+    const result = await client.downloadAsBytes(key);
+    console.log(`Download result: ok=${result.ok}, value type=${typeof result.value}, value length=${result.value?.length}`);
+    
+    if (!result.ok || !result.value) {
+      console.log(`Download failed or empty: ok=${result.ok}`);
       return null;
     }
     
     const extension = key.split(".").pop()?.toLowerCase() || "jpeg";
     const mimeType = extension === "png" ? "image/png" : "image/jpeg";
-    const bytes = value as unknown as Uint8Array;
+    const bytes = result.value as unknown as Uint8Array;
     const base64 = Buffer.from(bytes).toString("base64");
+    console.log(`Base64 encoded, length: ${base64.length}`);
     return `data:${mimeType};base64,${base64}`;
   } catch (error) {
     console.error("Error downloading image:", error);

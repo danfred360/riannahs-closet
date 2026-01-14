@@ -201,11 +201,14 @@ export async function getImageDataUrl(key: string): Promise<string | null> {
   }
   
   try {
-    const result = await apiRequest<{ dataUrl: string }>(`/api/v1/images/${encodeURIComponent(key)}`);
+    const path = `/api/v1/images/${encodeURIComponent(key)}`;
+    console.log("Fetching image from:", path);
+    const result = await apiRequest<{ dataUrl: string }>(path);
+    console.log("Image fetched successfully, length:", result.dataUrl?.length);
     imageCache.set(key, result.dataUrl);
     return result.dataUrl;
-  } catch (error) {
-    console.error("Failed to get image:", error);
+  } catch (error: any) {
+    console.error("Failed to get image:", key, "Error:", error?.message || error);
     return null;
   }
 }
