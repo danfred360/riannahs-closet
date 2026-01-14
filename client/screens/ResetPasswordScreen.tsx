@@ -97,7 +97,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
     >
       <View style={styles.header}>
         <Image
-          source={require("../../assets/images/app-icon.png")}
+          source={require("../../assets/images/icon.png")}
           style={styles.logo}
           contentFit="contain"
         />
@@ -224,9 +224,6 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
         )}
       </View>
 
-      <View style={styles.footer}>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-      </View>
     </KeyboardAwareScrollViewCompat>
   );
 }
