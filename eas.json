@@ -1,13 +1,14 @@
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 5.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_DOMAIN": "your-dev-deployment.replit.app"
+        "EXPO_PUBLIC_API_DOMAIN": "riannahscloset.com"
       }
     },
     "preview": {
@@ -16,10 +17,11 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_DOMAIN": "your-staging-deployment.replit.app"
+        "EXPO_PUBLIC_API_DOMAIN": "riannahscloset.com"
       }
     },
     "production": {
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_DOMAIN": "riannahscloset.com"
       }
@@ -28,8 +30,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id"
+        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID"
       }
     }
   }
