@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, useWindowDimensions } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, useWindowDimensions, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -7,15 +7,18 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
 import { OutfitCard } from "@/components/OutfitCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { SkeletonGrid } from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
-import { Outfit, ClothingItem } from "@/lib/types";
-import { getOutfits, getClothingItems } from "@/lib/api";
+import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
+import { getOutfits, getClothingItems, getPlannedOutfits } from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+type SortOption = "newest" | "recently-worn" | "least-worn" | "never-worn";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -33,32 +36,94 @@ export default function OutfitsScreen() {
 
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [items, setItems] = useState<ClothingItem[]>([]);
+  const [plannedOutfits, setPlannedOutfits] = useState<PlannedOutfit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
 
-  const filteredOutfits = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return outfits;
+  const sortLabels: Record<SortOption, string> = {
+    "newest": "Newest",
+    "recently-worn": "Recently Worn",
+    "least-worn": "Least Recently Worn",
+    "never-worn": "Never Worn",
+  };
+
+  const getLastWornDate = useCallback((outfitId: string): Date | null => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    const wornDates = plannedOutfits
+      .filter(p => p.outfitId === outfitId)
+      .map(p => new Date(p.date))
+      .filter(d => d <= today)
+      .sort((a, b) => b.getTime() - a.getTime());
+    
+    return wornDates.length > 0 ? wornDates[0] : null;
+  }, [plannedOutfits]);
+
+  const filteredAndSortedOutfits = useMemo(() => {
+    let filtered = outfits;
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = outfits.filter((outfit) => {
+        const nameMatch = outfit.name.toLowerCase().includes(query);
+        const tagMatch = outfit.tags?.some((tag) => tag.toLowerCase().includes(query));
+        return nameMatch || tagMatch;
+      });
     }
-    const query = searchQuery.toLowerCase().trim();
-    return outfits.filter((outfit) => {
-      const nameMatch = outfit.name.toLowerCase().includes(query);
-      const tagMatch = outfit.tags?.some((tag) => tag.toLowerCase().includes(query));
-      return nameMatch || tagMatch;
+
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        
+        case "recently-worn": {
+          const aWorn = getLastWornDate(a.id);
+          const bWorn = getLastWornDate(b.id);
+          if (!aWorn && !bWorn) return 0;
+          if (!aWorn) return 1;
+          if (!bWorn) return -1;
+          return bWorn.getTime() - aWorn.getTime();
+        }
+        
+        case "least-worn": {
+          const aWorn = getLastWornDate(a.id);
+          const bWorn = getLastWornDate(b.id);
+          if (!aWorn && !bWorn) return 0;
+          if (!aWorn) return -1;
+          if (!bWorn) return 1;
+          return aWorn.getTime() - bWorn.getTime();
+        }
+        
+        case "never-worn": {
+          const aWorn = getLastWornDate(a.id);
+          const bWorn = getLastWornDate(b.id);
+          if (!aWorn && !bWorn) return 0;
+          if (!aWorn) return -1;
+          if (!bWorn) return 1;
+          return 0;
+        }
+        
+        default:
+          return 0;
+      }
     });
-  }, [outfits, searchQuery]);
+
+    return sorted;
+  }, [outfits, searchQuery, sortOption, getLastWornDate]);
 
   const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
-      const [outfitData, itemData] = await Promise.all([
+      const [outfitData, itemData, plannedData] = await Promise.all([
         getOutfits(forceRefresh),
         getClothingItems(forceRefresh),
+        getPlannedOutfits(forceRefresh),
       ]);
-      setOutfits(outfitData.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      setOutfits(outfitData);
       setItems(itemData);
+      setPlannedOutfits(plannedData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -69,11 +134,10 @@ export default function OutfitsScreen() {
 
   useEffect(() => {
     loadData().then(() => {
-      Promise.all([getOutfits(true), getClothingItems(true)]).then(([freshOutfits, freshItems]) => {
-        setOutfits(freshOutfits.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ));
+      Promise.all([getOutfits(true), getClothingItems(true), getPlannedOutfits(true)]).then(([freshOutfits, freshItems, freshPlanned]) => {
+        setOutfits(freshOutfits);
         setItems(freshItems);
+        setPlannedOutfits(freshPlanned);
       }).catch(() => {});
     });
   }, []);
@@ -86,19 +150,24 @@ export default function OutfitsScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const [outfitData, itemData] = await Promise.all([
+      const [outfitData, itemData, plannedData] = await Promise.all([
         getOutfits(true),
         getClothingItems(true),
+        getPlannedOutfits(true),
       ]);
-      setOutfits(outfitData.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      setOutfits(outfitData);
       setItems(itemData);
+      setPlannedOutfits(plannedData);
     } catch (error) {
       console.error("Error refreshing data:", error);
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleSortChange = (option: SortOption) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSortOption(option);
   };
 
   const handleAddOutfit = () => {
@@ -134,6 +203,8 @@ export default function OutfitsScreen() {
     );
   };
 
+  const sortOptions: SortOption[] = ["newest", "recently-worn", "least-worn", "never-worn"];
+
   return (
     <ThemedView style={styles.container}>
       {outfits.length > 0 ? (
@@ -155,22 +226,50 @@ export default function OutfitsScreen() {
               </Pressable>
             ) : null}
           </View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.sortContainer}
+            contentContainerStyle={styles.sortContent}
+          >
+            {sortOptions.map((option) => (
+              <Pressable
+                key={option}
+                style={[
+                  styles.sortChip,
+                  { 
+                    backgroundColor: sortOption === option ? theme.primary : theme.backgroundSecondary,
+                  },
+                ]}
+                onPress={() => handleSortChange(option)}
+              >
+                <ThemedText
+                  style={[
+                    styles.sortChipText,
+                    { color: sortOption === option ? "#FFFFFF" : theme.textSecondary },
+                  ]}
+                >
+                  {sortLabels[option]}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       ) : null}
       <FlatList
         key={`outfits-grid-${numColumns}`}
-        data={filteredOutfits}
+        data={filteredAndSortedOutfits}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
-        columnWrapperStyle={filteredOutfits.length > 0 ? styles.row : undefined}
+        columnWrapperStyle={filteredAndSortedOutfits.length > 0 ? styles.row : undefined}
         contentContainerStyle={[
           styles.listContent,
           {
             paddingTop: outfits.length > 0 ? Spacing.md : headerHeight + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing["5xl"],
           },
-          filteredOutfits.length === 0 && styles.emptyContent,
+          filteredAndSortedOutfits.length === 0 && styles.emptyContent,
         ]}
         ListEmptyComponent={renderEmpty}
         refreshControl={
@@ -226,5 +325,20 @@ const styles = StyleSheet.create({
   },
   searchWrapper: {
     paddingHorizontal: Spacing.lg,
+  },
+  sortContainer: {
+    marginBottom: Spacing.md,
+  },
+  sortContent: {
+    gap: Spacing.sm,
+  },
+  sortChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  sortChipText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: "500",
   },
 });
