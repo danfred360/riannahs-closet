@@ -108,16 +108,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/v1/images/:key(*)", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
+      console.log(`Image GET request - key: ${key}, userId: ${req.userId}`);
       
       // Security check: users can only access their own images
       if (!isUserImage(req.userId!, key)) {
+        console.log(`Access denied - key doesn't match user: ${key}`);
         return res.status(403).json({ error: "Access denied" });
       }
       
       const dataUrl = await getImageUrl(key);
       if (!dataUrl) {
+        console.log(`Image not found in storage: ${key}`);
         return res.status(404).json({ error: "Image not found" });
       }
+      console.log(`Image found, dataUrl length: ${dataUrl.length}`);
       res.json({ dataUrl });
     } catch (error) {
       console.error("Image download error:", error);
