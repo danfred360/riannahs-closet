@@ -81,7 +81,7 @@ export default function OutfitsScreen() {
   };
 
   const handleOutfitPress = (outfit: Outfit) => {
-    navigation.navigate("OutfitBuilder", { outfitId: outfit.id });
+    navigation.navigate("OutfitDetail", { outfitId: outfit.id });
   };
 
   const renderItem = ({ item, index }: { item: Outfit; index: number }) => (

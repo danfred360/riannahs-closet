@@ -182,7 +182,7 @@ export default function ItemDetailScreen() {
                   <Pressable
                     key={outfit.id}
                     style={[styles.outfitCard, { backgroundColor: theme.backgroundSecondary }]}
-                    onPress={() => navigation.navigate("OutfitBuilder", { outfitId: outfit.id })}
+                    onPress={() => navigation.navigate("OutfitDetail", { outfitId: outfit.id })}
                   >
                     <Feather name="layers" size={16} color={theme.primary} />
                     <ThemedText type="body" style={styles.outfitName}>

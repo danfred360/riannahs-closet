@@ -20,11 +20,10 @@ import { Button } from "@/components/Button";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
-import { ClothingItem, ClothingCategory, Outfit, PlannedOutfit } from "@/lib/types";
+import { ClothingItem, ClothingCategory, Outfit } from "@/lib/types";
 import {
   getClothingItems,
   getOutfits,
-  getPlannedOutfits,
   addOutfit,
   updateOutfit,
   deleteOutfit,
@@ -54,7 +53,6 @@ export default function OutfitBuilderScreen() {
   >("all");
   const [saving, setSaving] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
-  const [plannedDates, setPlannedDates] = useState<PlannedOutfit[]>([]);
 
   const loadData = useCallback(async () => {
     try {
@@ -62,20 +60,13 @@ export default function OutfitBuilderScreen() {
       setItems(clothingItems);
 
       if (isEditing) {
-        const [outfits, allPlannedOutfits] = await Promise.all([
-          getOutfits(),
-          getPlannedOutfits(),
-        ]);
+        const outfits = await getOutfits();
         const outfit = outfits.find((o) => o.id === route.params?.outfitId);
         if (outfit) {
           setName(outfit.name);
           setSelectedItemIds(outfit.itemIds);
           setTags(outfit.tags || []);
           setOriginalCreatedAt(outfit.createdAt);
-          const outfitPlanned = allPlannedOutfits.filter(
-            (p) => p.outfitId === outfit.id
-          );
-          setPlannedDates(outfitPlanned);
         }
       }
     } catch (error) {
@@ -295,55 +286,6 @@ export default function OutfitBuilderScreen() {
         ) : null}
       </View>
 
-      {isEditing && plannedDates.length > 0 ? (
-        <View style={styles.wearDatesSection}>
-          <ThemedText type="caption" style={styles.label}>
-            Wear Schedule
-          </ThemedText>
-          <View style={styles.wearDatesContainer}>
-            {[...plannedDates]
-              .sort((a, b) => a.date.localeCompare(b.date))
-              .map((planned) => {
-                const planDate = new Date(planned.date + "T00:00:00");
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const isPast = planDate < today;
-                const isToday = planDate.getTime() === today.getTime();
-                return (
-                  <View
-                    key={planned.id}
-                    style={[
-                      styles.wearDateChip,
-                      { backgroundColor: theme.backgroundSecondary },
-                      isPast && { opacity: 0.6 },
-                    ]}
-                  >
-                    <Feather
-                      name={isPast ? "check-circle" : isToday ? "sun" : "calendar"}
-                      size={14}
-                      color={isPast ? theme.textSecondary : isToday ? theme.primary : theme.text}
-                    />
-                    <ThemedText type="small">
-                      {isToday
-                        ? "Today"
-                        : planDate.toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                    </ThemedText>
-                    {isPast ? (
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                        (worn)
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                );
-              })}
-          </View>
-        </View>
-      ) : null}
-
       {selectedItems.length > 0 ? (
         <View style={styles.previewSection}>
           <ThemedText type="caption" style={styles.label}>
@@ -480,23 +422,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Spacing.sm,
     marginTop: Spacing.sm,
-  },
-  wearDatesSection: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  wearDatesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-  },
-  wearDateChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
   },
   previewSection: {
     paddingHorizontal: Spacing.lg,
