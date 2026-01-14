@@ -86,3 +86,15 @@ Preferred communication style: Simple, everyday language.
 - **Metro bundler**: Expo's JavaScript bundler
 - **drizzle-kit**: Database migrations (`npm run db:push`)
 - **ESLint + Prettier**: Code formatting and linting
+
+## API Documentation
+
+### OpenAPI Schema
+- **File**: `api-schema.json` - OpenAPI 3.0 schema for Cloudflare API Shield
+- **Update Required**: When adding new API endpoints, update this file to include them
+- **Endpoints documented**:
+  - Authentication: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
+  - Profile: `/api/v1/profile`
+  - Clothing Items: `/api/v1/items`, `/api/v1/items/{id}`
+  - Outfits: `/api/v1/outfits`, `/api/v1/outfits/{id}`
+  - Planner: `/api/v1/planner`, `/api/v1/planner/{id}`
