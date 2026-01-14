@@ -529,6 +529,17 @@ async function buildWebBundle() {
 }
 
 async function main() {
+  // Check if we should skip mobile bundles (for faster publish)
+  const webOnly = process.env.WEB_ONLY === "true" || process.argv.includes("--web-only");
+  
+  if (webOnly) {
+    console.log("Building web bundle only (skipping mobile bundles)...");
+    setupSignalHandlers();
+    await buildWebBundle();
+    console.log("Web build complete!");
+    process.exit(0);
+  }
+
   console.log("Building static Expo Go deployment...");
 
   setupSignalHandlers();

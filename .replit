@@ -76,3 +76,6 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.development]
+
+[userenv.production]
+WEB_ONLY = "true"
