@@ -5,6 +5,7 @@ import {
   TextInput,
   Pressable,
   Alert,
+  Platform,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -213,22 +214,29 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Pressable
           style={[styles.logoutButton, { backgroundColor: theme.error }]}
-          onPress={() => {
-            Alert.alert(
-              "Sign Out",
-              "Are you sure you want to sign out?",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Sign Out",
-                  style: "destructive",
-                  onPress: async () => {
-                    await logout();
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          onPress={async () => {
+            if (Platform.OS === "web") {
+              const confirmed = window.confirm("Are you sure you want to sign out?");
+              if (confirmed) {
+                await logout();
+              }
+            } else {
+              Alert.alert(
+                "Sign Out",
+                "Are you sure you want to sign out?",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign Out",
+                    style: "destructive",
+                    onPress: async () => {
+                      await logout();
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    },
                   },
-                },
-              ]
-            );
+                ]
+              );
+            }
           }}
         >
           <Feather name="log-out" size={20} color="white" />
