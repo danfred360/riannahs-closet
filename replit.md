@@ -104,7 +104,7 @@ eas update --branch preview --message "Testing new feature"
 ### Core Services
 - **PostgreSQL**: Database provisioned via Replit (connection via DATABASE_URL)
 - **Drizzle ORM**: Database toolkit with schema-first design
-- **Resend**: Email service for password reset functionality (via Replit integration)
+- **Resend**: Email service for password reset and account deletion confirmation emails (via Replit integration)
 
 ### Third-Party Libraries
 - **expo-image-picker**: For capturing/selecting clothing photos
@@ -125,6 +125,7 @@ eas update --branch preview --message "Testing new feature"
 - **Endpoints documented**:
   - Authentication: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
   - Password Reset: `/api/v1/auth/forgot-password`, `/api/v1/auth/verify-reset-token`, `/api/v1/auth/reset-password`
+  - Account Management: `/api/v1/auth/account` (DELETE - deletes user and all data)
   - Profile: `/api/v1/profile`, `/api/v1/profile/email`
   - Clothing Items: `/api/v1/items`, `/api/v1/items/{id}`
   - Outfits: `/api/v1/outfits`, `/api/v1/outfits/{id}`
@@ -146,5 +147,21 @@ eas update --branch preview --message "Testing new feature"
 - Generic success message prevents email enumeration
 
 ### Database Tables
-- `users.email` - Optional email field for password reset
+- `users.email` - Required unique email field for authentication
 - `password_reset_tokens` - Stores reset tokens with user_id, token, expires_at
+
+## Account Deletion
+
+### How It Works
+1. User taps "Delete Account" button on Profile screen
+2. Confirmation dialog warns about permanent data loss
+3. Backend deletes user and all associated data (cascade delete)
+4. Confirmation email sent via Resend
+5. User is logged out automatically
+
+### Data Removed
+- User account (users table)
+- All clothing items
+- All outfits
+- All planned outfit entries
+- All password reset tokens

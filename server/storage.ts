@@ -48,6 +48,8 @@ export interface IStorage {
   getPlannedOutfits(userId: string): Promise<PlannedOutfit[]>;
   planOutfit(userId: string, plan: InsertPlannedOutfit): Promise<PlannedOutfit>;
   removePlannedOutfit(userId: string, planId: string): Promise<boolean>;
+  
+  deleteUser(userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -262,6 +264,11 @@ export class DatabaseStorage implements IStorage {
   async removePlannedOutfit(userId: string, planId: string): Promise<boolean> {
     await db.delete(plannedOutfits).where(and(eq(plannedOutfits.id, planId), eq(plannedOutfits.userId, userId)));
     return true;
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, userId)).returning();
+    return result.length > 0;
   }
 }
 

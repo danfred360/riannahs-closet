@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { authMiddleware, generateToken, verifyPassword, AuthRequest } from "./auth";
 import { insertUserSchema, insertClothingItemSchema, insertOutfitSchema, insertPlannedOutfitSchema } from "@shared/schema";
 import { z } from "zod";
-import { uploadImage, getImageUrl, deleteImage, isUserImage } from "./objectStorage";
-import { sendPasswordResetEmail } from "./email";
+import { uploadImage, getImageUrl, deleteImage, isUserImage, deleteAllUserImages } from "./objectStorage";
+import { sendPasswordResetEmail, sendAccountDeletionEmail } from "./email";
 import crypto from "crypto";
 
 const passwordResetRateLimiter = new Map<string, { count: number; resetAt: number }>();
@@ -194,6 +194,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Reset password error:", error);
       res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  app.delete("/api/v1/auth/account", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const email = user.email;
+      const displayName = user.displayName;
+      const userId = req.userId!;
+
+      // Delete all user images from object storage first
+      const deletedImages = await deleteAllUserImages(userId);
+      console.log(`Deleted ${deletedImages} images for user ${userId}`);
+
+      // Delete user from database (cascade deletes all related data)
+      const deleted = await storage.deleteUser(userId);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete account" });
+      }
+
+      // Send confirmation email (fire and forget)
+      sendAccountDeletionEmail(email, displayName).catch((err) => {
+        console.error("Failed to send account deletion email:", err);
+      });
+
+      res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Delete account error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
     }
   });
 

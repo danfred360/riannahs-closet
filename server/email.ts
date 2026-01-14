@@ -38,6 +38,54 @@ async function getUncachableResendClient() {
   };
 }
 
+export async function sendAccountDeletionEmail(email: string, displayName: string | null): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    
+    const { error } = await client.emails.send({
+      from: fromEmail || 'Riannah\'s Closet <noreply@riannahscloset.com>',
+      to: email,
+      subject: 'Account Deleted - Riannah\'s Closet',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Georgia', serif; background-color: #faf8f5; margin: 0; padding: 20px; }
+            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+            h1 { color: #2d2d2d; font-size: 24px; margin-bottom: 20px; }
+            p { color: #555; line-height: 1.6; margin-bottom: 20px; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #888; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Account Deleted</h1>
+            <p>Hi${displayName ? ` ${displayName}` : ''},</p>
+            <p>This email confirms that your Riannah's Closet account has been permanently deleted.</p>
+            <p>All your wardrobe items, outfits, and planned looks have been removed from our system.</p>
+            <p>We're sad to see you go! If you ever want to organize your wardrobe again, you're always welcome to create a new account.</p>
+            <div class="footer">
+              <p>Riannah's Closet - Your wardrobe, beautifully organized</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('Failed to send account deletion email:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending account deletion email:', error);
+    return false;
+  }
+}
+
 export async function sendPasswordResetEmail(email: string, resetToken: string, appUrl: string): Promise<boolean> {
   try {
     const { client, fromEmail } = await getUncachableResendClient();

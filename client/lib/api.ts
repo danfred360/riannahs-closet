@@ -242,4 +242,10 @@ export function clearImageCache(): void {
   imageCache.clear();
 }
 
+export async function deleteAccount(): Promise<void> {
+  await apiRequest<{ message: string }>("/api/v1/auth/account", {
+    method: "DELETE",
+  });
+}
+
 export { invalidateAllCache } from "./cache";

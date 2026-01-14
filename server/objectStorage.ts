@@ -88,3 +88,32 @@ export async function deleteImage(key: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function deleteAllUserImages(userId: string): Promise<number> {
+  const client = getClient();
+  const prefix = `users/${userId}/`;
+  
+  try {
+    const result = await client.list({ prefix });
+    if (!result.ok || !result.value) {
+      return 0;
+    }
+    
+    const objects = result.value;
+    let deletedCount = 0;
+    
+    for (const obj of objects) {
+      try {
+        await client.delete(obj.name);
+        deletedCount++;
+      } catch (err) {
+        console.error(`Failed to delete image ${obj.name}:`, err);
+      }
+    }
+    
+    return deletedCount;
+  } catch (error) {
+    console.error("Error listing/deleting user images:", error);
+    return 0;
+  }
+}

@@ -23,6 +23,7 @@ import {
   saveUserProfile,
   getClothingItems,
   getOutfits,
+  deleteAccount,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
@@ -250,6 +251,54 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.section}>
+        <Pressable
+          style={[styles.deleteButton, { borderColor: theme.error }]}
+          onPress={() => {
+            const handleDelete = async () => {
+              try {
+                await deleteAccount();
+                await logout();
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error: any) {
+                if (Platform.OS === "web") {
+                  window.alert(error?.message || "Failed to delete account");
+                } else {
+                  Alert.alert("Error", error?.message || "Failed to delete account");
+                }
+              }
+            };
+
+            if (Platform.OS === "web") {
+              const confirmed = window.confirm(
+                "Are you sure you want to delete your account? This will permanently remove all your wardrobe items, outfits, and planned looks. This action cannot be undone."
+              );
+              if (confirmed) {
+                handleDelete();
+              }
+            } else {
+              Alert.alert(
+                "Delete Account",
+                "Are you sure you want to delete your account? This will permanently remove all your wardrobe items, outfits, and planned looks. This action cannot be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete Account",
+                    style: "destructive",
+                    onPress: handleDelete,
+                  },
+                ]
+              );
+            }
+          }}
+        >
+          <Feather name="trash-2" size={20} color={theme.error} />
+          <ThemedText style={[styles.deleteText, { color: theme.error }]}>
+            Delete Account
+          </ThemedText>
+        </Pressable>
+      </View>
+
       <Image
         source={require("@/assets/images/botanical-divider.png")}
         style={styles.divider}
@@ -356,6 +405,18 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "white",
+    fontWeight: "600",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  deleteText: {
     fontWeight: "600",
   },
 });
