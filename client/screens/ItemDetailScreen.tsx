@@ -11,8 +11,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
 import { useTheme } from "@/hooks/useTheme";
-import { ClothingItem, CATEGORY_LABELS } from "@/lib/types";
-import { getClothingItems, deleteClothingItem } from "@/lib/api";
+import { ClothingItem, Outfit, CATEGORY_LABELS } from "@/lib/types";
+import { getClothingItems, deleteClothingItem, getOutfits } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -27,12 +27,21 @@ export default function ItemDetailScreen() {
   const queryClient = useQueryClient();
 
   const [item, setItem] = useState<ClothingItem | null>(null);
+  const [usedInOutfits, setUsedInOutfits] = useState<Outfit[]>([]);
 
   const loadItem = useCallback(async () => {
     try {
-      const items = await getClothingItems();
+      const [items, outfits] = await Promise.all([
+        getClothingItems(),
+        getOutfits(),
+      ]);
       const found = items.find((i) => i.id === route.params.itemId);
       setItem(found || null);
+      
+      const outfitsWithItem = outfits.filter((outfit) =>
+        outfit.itemIds.includes(route.params.itemId)
+      );
+      setUsedInOutfits(outfitsWithItem);
     } catch (error) {
       console.error("Error loading item:", error);
     }
@@ -162,6 +171,29 @@ export default function ItemDetailScreen() {
               })}
             </ThemedText>
           </View>
+
+          {usedInOutfits.length > 0 ? (
+            <View style={styles.outfitsSection}>
+              <ThemedText type="caption" style={styles.sectionLabel}>
+                Used in {usedInOutfits.length} {usedInOutfits.length === 1 ? "Outfit" : "Outfits"}
+              </ThemedText>
+              <View style={styles.outfitsList}>
+                {usedInOutfits.map((outfit) => (
+                  <Pressable
+                    key={outfit.id}
+                    style={[styles.outfitCard, { backgroundColor: theme.backgroundSecondary }]}
+                    onPress={() => navigation.navigate("OutfitBuilder", { outfitId: outfit.id })}
+                  >
+                    <Feather name="layers" size={16} color={theme.primary} />
+                    <ThemedText type="body" style={styles.outfitName}>
+                      {outfit.name}
+                    </ThemedText>
+                    <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.actions}>
@@ -230,5 +262,21 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderColor: "red",
+  },
+  outfitsSection: {
+    marginTop: Spacing.lg,
+  },
+  outfitsList: {
+    gap: Spacing.sm,
+  },
+  outfitCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+  },
+  outfitName: {
+    flex: 1,
   },
 });
