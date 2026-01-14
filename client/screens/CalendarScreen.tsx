@@ -144,21 +144,15 @@ export default function CalendarScreen() {
     calendarDays.push(i);
   }
 
-  const getPlannedOutfitForDate = (dateStr: string): PlannedOutfit | undefined => {
-    return plannedOutfits.find((p) => p.date === dateStr);
+  const getPlannedOutfitsForDate = (dateStr: string): PlannedOutfit[] => {
+    return plannedOutfits.filter((p) => p.date === dateStr);
   };
 
   const getOutfitById = (outfitId: string): Outfit | undefined => {
     return outfits.find((o) => o.id === outfitId);
   };
 
-  const selectedPlannedOutfit = getPlannedOutfitForDate(selectedDate);
-  const selectedOutfit = selectedPlannedOutfit
-    ? getOutfitById(selectedPlannedOutfit.outfitId)
-    : undefined;
-  const selectedOutfitItems = selectedOutfit
-    ? items.filter((item) => selectedOutfit.itemIds.includes(item.id))
-    : [];
+  const selectedPlannedOutfits = getPlannedOutfitsForDate(selectedDate);
 
   const handlePreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -185,13 +179,11 @@ export default function CalendarScreen() {
     }
   };
 
-  const handleRemoveOutfit = async () => {
+  const handleRemoveOutfit = async (plannedOutfitId: string) => {
     try {
-      if (selectedPlannedOutfit) {
-        await removePlannedOutfit(selectedPlannedOutfit.id);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        loadData();
-      }
+      await removePlannedOutfit(plannedOutfitId);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      loadData();
     } catch (error) {
       console.error("Error removing outfit:", error);
     }
@@ -250,7 +242,7 @@ export default function CalendarScreen() {
               const dateStr = getDateString(new Date(year, month, day));
               const isSelected = dateStr === selectedDate;
               const isToday = dateStr === today;
-              const hasOutfit = !!getPlannedOutfitForDate(dateStr);
+              const plannedCount = getPlannedOutfitsForDate(dateStr).length;
 
               return (
                 <Pressable
@@ -271,17 +263,22 @@ export default function CalendarScreen() {
                   >
                     {day}
                   </ThemedText>
-                  {hasOutfit ? (
-                    <View
-                      style={[
-                        styles.outfitDot,
-                        {
-                          backgroundColor: isSelected
-                            ? theme.buttonText
-                            : theme.accent,
-                        },
-                      ]}
-                    />
+                  {plannedCount > 0 ? (
+                    <View style={styles.outfitDotsRow}>
+                      {Array.from({ length: Math.min(plannedCount, 3) }).map((_, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.outfitDot,
+                            {
+                              backgroundColor: isSelected
+                                ? theme.buttonText
+                                : theme.accent,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
                   ) : null}
                 </Pressable>
               );
@@ -297,28 +294,39 @@ export default function CalendarScreen() {
               })}
             </ThemedText>
 
-            {selectedOutfit ? (
-              <Card style={styles.outfitPreview}>
-                <View style={styles.outfitHeader}>
-                  <ThemedText type="body" style={styles.outfitName}>
-                    {selectedOutfit.name}
-                  </ThemedText>
-                  <Pressable onPress={handleRemoveOutfit} hitSlop={8}>
-                    <Feather name="x" size={20} color={theme.textSecondary} />
-                  </Pressable>
-                </View>
-                <View style={styles.outfitItemsRow}>
-                  {selectedOutfitItems.slice(0, 4).map((item) => (
-                    <Image
-                      key={item.id}
-                      source={{ uri: item.imageUri }}
-                      style={styles.outfitItemImage}
-                      contentFit="cover"
-                    />
-                  ))}
-                </View>
-              </Card>
-            ) : showOutfitPicker ? (
+            {selectedPlannedOutfits.length > 0 ? (
+              <View style={styles.plannedOutfitsList}>
+                {selectedPlannedOutfits.map((plannedOutfit) => {
+                  const outfit = getOutfitById(plannedOutfit.outfitId);
+                  if (!outfit) return null;
+                  const outfitItems = items.filter((item) => outfit.itemIds.includes(item.id));
+                  return (
+                    <Card key={plannedOutfit.id} style={styles.outfitPreview}>
+                      <View style={styles.outfitHeader}>
+                        <ThemedText type="body" style={styles.outfitName}>
+                          {outfit.name}
+                        </ThemedText>
+                        <Pressable onPress={() => handleRemoveOutfit(plannedOutfit.id)} hitSlop={8}>
+                          <Feather name="x" size={20} color={theme.textSecondary} />
+                        </Pressable>
+                      </View>
+                      <View style={styles.outfitItemsRow}>
+                        {outfitItems.slice(0, 4).map((item) => (
+                          <Image
+                            key={item.id}
+                            source={{ uri: item.imageUri }}
+                            style={styles.outfitItemImage}
+                            contentFit="cover"
+                          />
+                        ))}
+                      </View>
+                    </Card>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {showOutfitPicker ? (
               <View style={styles.outfitPicker}>
                 <ThemedText type="caption" style={styles.pickerTitle}>
                   Choose an outfit:
@@ -372,7 +380,7 @@ export default function CalendarScreen() {
               </View>
             ) : (
               <Button onPress={() => setShowOutfitPicker(true)}>
-                Plan an outfit
+                {selectedPlannedOutfits.length > 0 ? "Add another outfit" : "Plan an outfit"}
               </Button>
             )}
           </View>
@@ -425,17 +433,24 @@ const styles = StyleSheet.create({
   dayText: {
     fontWeight: "500",
   },
-  outfitDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  outfitDotsRow: {
+    flexDirection: "row",
+    gap: 2,
     marginTop: 2,
+  },
+  outfitDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   selectedDateSection: {
     gap: Spacing.md,
   },
   selectedDateTitle: {
     marginBottom: Spacing.sm,
+  },
+  plannedOutfitsList: {
+    gap: Spacing.md,
   },
   outfitPreview: {
     padding: Spacing.md,
