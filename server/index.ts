@@ -28,6 +28,10 @@ function setupCors(app: express.Application) {
       });
     }
 
+    // Add custom domain
+    origins.add("https://riannahscloset.com");
+    origins.add("https://www.riannahscloset.com");
+
     const origin = req.header("origin");
 
     // Allow localhost origins for Expo web development (any port)
