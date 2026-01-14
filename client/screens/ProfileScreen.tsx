@@ -6,6 +6,7 @@ import {
   Pressable,
   Alert,
   Platform,
+  Linking,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -299,6 +300,28 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.section}>
+        <ThemedText type="subheading" style={styles.sectionTitle}>
+          Support
+        </ThemedText>
+        <Card>
+          <ThemedText type="body" style={{ marginBottom: Spacing.md }}>
+            Have feedback or need help? We'd love to hear from you!
+          </ThemedText>
+          <Pressable
+            style={[styles.supportButton, { backgroundColor: theme.primary }]}
+            onPress={() => {
+              Linking.openURL("mailto:support@riannahscloset.com?subject=Riannah's Closet Feedback");
+            }}
+          >
+            <Feather name="mail" size={18} color="white" />
+            <ThemedText style={styles.supportButtonText}>
+              Contact Support
+            </ThemedText>
+          </Pressable>
+        </Card>
+      </View>
+
       <Image
         source={require("@/assets/images/botanical-divider.png")}
         style={styles.divider}
@@ -417,6 +440,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteText: {
+    fontWeight: "600",
+  },
+  supportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+  },
+  supportButtonText: {
+    color: "white",
     fontWeight: "600",
   },
 });

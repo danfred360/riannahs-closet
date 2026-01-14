@@ -24,6 +24,7 @@ import { queryClient } from "@/lib/query-client";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import AuthStackNavigator from "@/navigation/AuthStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
 
@@ -44,7 +45,12 @@ function AppContent() {
     return <AuthStackNavigator />;
   }
 
-  return <RootStackNavigator />;
+  return (
+    <>
+      <RootStackNavigator />
+      <WelcomeModal />
+    </>
+  );
 }
 
 export default function App() {
