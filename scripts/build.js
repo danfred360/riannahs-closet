@@ -494,10 +494,47 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
   console.log("Manifests updated");
 }
 
+async function buildWebBundle() {
+  console.log("Building web bundle...");
+  
+  return new Promise((resolve, reject) => {
+    const webBuild = spawn("npx", ["expo", "export", "--platform", "web"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    });
+
+    webBuild.stdout.on("data", (data) => {
+      const output = data.toString().trim();
+      if (output) console.log(`[Web Build] ${output}`);
+    });
+
+    webBuild.stderr.on("data", (data) => {
+      const output = data.toString().trim();
+      if (output) console.error(`[Web Build] ${output}`);
+    });
+
+    webBuild.on("close", (code) => {
+      if (code === 0) {
+        console.log("Web bundle complete");
+        resolve();
+      } else {
+        reject(new Error(`Web build failed with code ${code}`));
+      }
+    });
+
+    webBuild.on("error", (error) => {
+      reject(error);
+    });
+  });
+}
+
 async function main() {
   console.log("Building static Expo Go deployment...");
 
   setupSignalHandlers();
+
+  // Build web bundle first (for desktop browsers)
+  await buildWebBundle();
 
   const domain = getDeploymentDomain();
   const baseUrl = `https://${domain}`;
