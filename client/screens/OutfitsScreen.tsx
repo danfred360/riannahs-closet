@@ -67,11 +67,18 @@ export default function OutfitsScreen() {
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = outfits.filter((outfit) => {
+      filtered = filtered.filter((outfit) => {
         const nameMatch = outfit.name.toLowerCase().includes(query);
         const tagMatch = outfit.tags?.some((tag) => tag.toLowerCase().includes(query));
         return nameMatch || tagMatch;
       });
+    }
+
+    if (sortOption === "never-worn") {
+      filtered = filtered.filter((outfit) => getLastWornDate(outfit.id) === null);
+      return filtered.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     }
 
     const sorted = [...filtered].sort((a, b) => {
@@ -95,15 +102,6 @@ export default function OutfitsScreen() {
           if (!aWorn) return -1;
           if (!bWorn) return 1;
           return aWorn.getTime() - bWorn.getTime();
-        }
-        
-        case "never-worn": {
-          const aWorn = getLastWornDate(a.id);
-          const bWorn = getLastWornDate(b.id);
-          if (!aWorn && !bWorn) return 0;
-          if (!aWorn) return -1;
-          if (!bWorn) return 1;
-          return 0;
         }
         
         default:
