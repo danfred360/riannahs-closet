@@ -49,9 +49,11 @@ Preferred communication style: Simple, everyday language.
    - Database schema in `shared/schema.ts` uses Drizzle ORM with Zod validation
 
 5. **API versioning**: All API endpoints are prefixed with `/api/v1/`
+   - **STATUS: v1 ENDPOINTS ARE NOW LOCKED** - Do not make breaking changes to v1 endpoints
    - Rationale: Ensures backward compatibility when mobile app is in App Store review
    - Pattern: Server routes and client API calls all use versioned paths
-   - Future breaking changes can be introduced under `/api/v2/` while maintaining v1 for existing mobile app users
+   - Breaking changes MUST be introduced under `/api/v2/` while maintaining v1 for existing users
+   - The OpenAPI schema (`api-schema.json`) is uploaded to Cloudflare API Shield for validation
 
 ## TestFlight Setup (Pending)
 
@@ -121,7 +123,9 @@ eas update --branch preview --message "Testing new feature"
 
 ### OpenAPI Schema
 - **File**: `api-schema.json` - OpenAPI 3.0 schema for Cloudflare API Shield
-- **Update Required**: When adding new API endpoints, update this file to include them
+- **STATUS: v1 ENDPOINTS ARE LOCKED** - Do not modify existing v1 endpoint schemas in ways that break compatibility
+- **Adding new v1 endpoints**: Allowed, but must be backward compatible (no breaking changes)
+- **Breaking changes**: Create new `/api/v2/` endpoints instead
 - **Endpoints documented**:
   - Authentication: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
   - Password Reset: `/api/v1/auth/forgot-password`, `/api/v1/auth/verify-reset-token`, `/api/v1/auth/reset-password`
