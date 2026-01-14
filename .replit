@@ -76,7 +76,6 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.development]
-OBJECT_STORAGE_BUCKET_ID = "replit-objstore-3e5c444f-dadc-48cb-b2ba-8146e68c4164"
 
 [userenv.production]
 WEB_ONLY = "true"
