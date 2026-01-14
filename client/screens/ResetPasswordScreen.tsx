@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -96,9 +96,11 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
       ]}
     >
       <View style={styles.header}>
-        <View style={[styles.logoContainer, { backgroundColor: theme.primary }]}>
-          <Feather name="lock" size={36} color="white" />
-        </View>
+        <Image
+          source={require("../../assets/images/app-icon.png")}
+          style={styles.logo}
+          contentFit="contain"
+        />
         <ThemedText type="title" style={styles.title}>
           {success ? "Password Reset" : "Create New Password"}
         </ThemedText>
@@ -238,13 +240,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing["3xl"],
   },
-  logoContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: "center",
-    alignItems: "center",
+  logo: {
+    width: 80,
+    height: 80,
     marginBottom: Spacing.lg,
+    borderRadius: 16,
   },
   title: {
     textAlign: "center",

@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
-import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -102,9 +102,11 @@ export default function AuthScreen() {
       ]}
     >
       <View style={styles.header}>
-        <View style={[styles.logoContainer, { backgroundColor: theme.primary }]}>
-          <Feather name="heart" size={40} color="white" />
-        </View>
+        <Image
+          source={require("../../assets/images/app-icon.png")}
+          style={styles.logo}
+          contentFit="contain"
+        />
         <ThemedText type="title" style={styles.title}>
           Riannah's Closet
         </ThemedText>
@@ -261,13 +263,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing["3xl"],
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
+  logo: {
+    width: 100,
+    height: 100,
     marginBottom: Spacing.lg,
+    borderRadius: 20,
   },
   title: {
     textAlign: "center",
