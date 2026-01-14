@@ -196,16 +196,19 @@ export async function uploadImage(imageData: string, fileName: string): Promise<
 }
 
 export async function getImageDataUrl(key: string): Promise<string | null> {
-  if (imageCache.has(key)) {
-    return imageCache.get(key)!;
+  const cached = imageCache.get(key);
+  // Only use cache if it has valid data (real base64 images are much longer than 100 chars)
+  if (cached && cached.length > 100) {
+    return cached;
   }
   
   try {
     const path = `/api/v1/images/${encodeURIComponent(key)}`;
-    console.log("Fetching image from:", path);
     const result = await apiRequest<{ dataUrl: string }>(path);
-    console.log("Image fetched successfully, length:", result.dataUrl?.length);
-    imageCache.set(key, result.dataUrl);
+    // Only cache valid responses
+    if (result.dataUrl && result.dataUrl.length > 100) {
+      imageCache.set(key, result.dataUrl);
+    }
     return result.dataUrl;
   } catch (error: any) {
     console.error("Failed to get image:", key, "Error:", error?.message || error);
