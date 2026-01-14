@@ -35,7 +35,7 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile>({
-    displayName: user?.username || "User",
+    displayName: user?.displayName || "User",
     avatarUri: null,
   });
   const [itemCount, setItemCount] = useState(0);
@@ -50,20 +50,19 @@ export default function ProfileScreen() {
         getClothingItems(forceRefresh),
         getOutfits(forceRefresh),
       ]);
-      // Use username from auth context if displayName is not set
-      const displayName = userProfile.displayName || user?.username || "User";
+      const displayName = userProfile.displayName || user?.displayName || "User";
       setProfile({ ...userProfile, displayName });
       setItemCount(items.length);
       setOutfitCount(outfits.length);
     } catch (error) {
       console.error("Error loading profile:", error);
     }
-  }, [user?.username]);
+  }, [user?.displayName]);
 
   useEffect(() => {
     loadData().then(() => {
       Promise.all([getUserProfile(true), getClothingItems(true), getOutfits(true)]).then(([freshProfile, freshItems, freshOutfits]) => {
-        const displayName = freshProfile.displayName || user?.username || "User";
+        const displayName = freshProfile.displayName || user?.displayName || "User";
         setProfile({ ...freshProfile, displayName });
         setItemCount(freshItems.length);
         setOutfitCount(freshOutfits.length);

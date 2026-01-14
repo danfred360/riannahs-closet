@@ -17,7 +17,12 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
-import { AuthStackParamList } from "@/navigation/AuthStackNavigator";
+
+type AuthStackParamList = {
+  Auth: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
+};
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "Auth">;
 
@@ -28,7 +33,8 @@ export default function AuthScreen() {
   const navigation = useNavigation<NavigationProp>();
 
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,8 +43,14 @@ export default function AuthScreen() {
   const handleSubmit = async () => {
     setError("");
 
-    if (!username.trim() || !password.trim()) {
-      setError("Please fill in all fields");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Please enter a password");
       return;
     }
 
@@ -57,8 +69,8 @@ export default function AuthScreen() {
 
     try {
       const result = isLogin
-        ? await login(username.trim(), password)
-        : await register(username.trim(), password);
+        ? await login(email.trim(), password)
+        : await register(email.trim(), password, displayName.trim() || undefined);
 
       if (!result.success) {
         setError(result.error || "Something went wrong");
@@ -77,6 +89,7 @@ export default function AuthScreen() {
     setIsLogin(!isLogin);
     setError("");
     setConfirmPassword("");
+    setDisplayName("");
     Haptics.selectionAsync();
   };
 
@@ -105,7 +118,7 @@ export default function AuthScreen() {
       <View style={styles.form}>
         <View style={styles.field}>
           <ThemedText type="caption" style={styles.label}>
-            Username
+            Email
           </ThemedText>
           <TextInput
             style={[
@@ -116,15 +129,40 @@ export default function AuthScreen() {
                 fontFamily: Typography.body.fontFamily,
               },
             ]}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Enter your username"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
             placeholderTextColor={theme.textSecondary}
             autoCapitalize="none"
             autoCorrect={false}
-            testID="input-username"
+            keyboardType="email-address"
+            testID="input-email"
           />
         </View>
+
+        {!isLogin ? (
+          <View style={styles.field}>
+            <ThemedText type="caption" style={styles.label}>
+              Display Name (optional)
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  backgroundColor: theme.backgroundSecondary,
+                  fontFamily: Typography.body.fontFamily,
+                },
+              ]}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="How should we call you?"
+              placeholderTextColor={theme.textSecondary}
+              autoCorrect={false}
+              testID="input-display-name"
+            />
+          </View>
+        ) : null}
 
         <View style={styles.field}>
           <ThemedText type="caption" style={styles.label}>

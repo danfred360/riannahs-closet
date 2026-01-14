@@ -38,16 +38,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid input", details: parsed.error.errors });
       }
 
-      const existing = await storage.getUserByUsername(parsed.data.username);
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(parsed.data.email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+
+      const existing = await storage.getUserByEmail(parsed.data.email);
       if (existing) {
-        return res.status(409).json({ error: "Username already exists" });
+        return res.status(409).json({ error: "An account with this email already exists" });
       }
 
       const user = await storage.createUser(parsed.data);
       const token = generateToken(user.id);
 
       res.status(201).json({
-        user: { id: user.id, username: user.username, displayName: user.displayName, avatarUri: user.avatarUri },
+        user: { id: user.id, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri },
         token,
       });
     } catch (error) {
@@ -58,17 +63,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/v1/auth/login", async (req, res) => {
     try {
-      const parsed = insertUserSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid input" });
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
       }
 
-      const user = await storage.getUserByUsername(parsed.data.username);
+      const user = await storage.getUserByEmail(email);
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      const valid = await verifyPassword(parsed.data.password, user.password);
+      const valid = await verifyPassword(password, user.password);
       if (!valid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -76,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateToken(user.id);
 
       res.json({
-        user: { id: user.id, username: user.username, displayName: user.displayName, avatarUri: user.avatarUri },
+        user: { id: user.id, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri },
         token,
       });
     } catch (error) {
@@ -92,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
-      res.json({ id: user.id, username: user.username, displayName: user.displayName, avatarUri: user.avatarUri });
+      res.json({ id: user.id, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ error: "Failed to get user" });
@@ -107,39 +112,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
-      res.json({ id: user.id, username: user.username, displayName: user.displayName, avatarUri: user.avatarUri });
+      res.json({ id: user.id, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri });
     } catch (error) {
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Failed to update profile" });
-    }
-  });
-
-  app.put("/api/v1/profile/email", authMiddleware, async (req: AuthRequest, res: Response) => {
-    try {
-      const { email } = req.body;
-      if (!email || typeof email !== 'string') {
-        return res.status(400).json({ error: "Email is required" });
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ error: "Invalid email format" });
-      }
-
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser && existingUser.id !== req.userId) {
-        return res.status(409).json({ error: "Email already in use" });
-      }
-
-      const user = await storage.updateUserEmail(req.userId!, email);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      res.json({ id: user.id, username: user.username, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri });
-    } catch (error) {
-      console.error("Update email error:", error);
-      res.status(500).json({ error: "Failed to update email" });
     }
   });
 

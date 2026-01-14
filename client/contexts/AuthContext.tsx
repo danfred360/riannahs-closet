@@ -8,7 +8,7 @@ import { setCacheUserId } from "@/lib/cache";
 
 interface User {
   id: string;
-  username: string;
+  email: string;
   displayName: string | null;
   avatarUri: string | null;
 }
@@ -17,8 +17,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (displayName: string | null, avatarUri: string | null) => Promise<void>;
 }
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadToken();
   }, [fetchUser]);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const apiUrl = getApiUrl();
       const loginUrl = new URL("/api/v1/auth/login", apiUrl).toString();
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const text = await response.text();
@@ -143,12 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (username: string, password: string) => {
+  const register = useCallback(async (email: string, password: string, displayName?: string) => {
     try {
       const response = await fetch(new URL("/api/v1/auth/register", getApiUrl()).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password, displayName: displayName || null }),
       });
 
       const data = await response.json();

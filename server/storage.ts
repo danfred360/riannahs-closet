@@ -23,11 +23,9 @@ const SALT_ROUNDS = 10;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserProfile(userId: string, displayName: string | null, avatarUri: string | null): Promise<User | undefined>;
-  updateUserEmail(userId: string, email: string): Promise<User | undefined>;
   updateUserPassword(userId: string, password: string): Promise<User | undefined>;
   
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
@@ -58,11 +56,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
@@ -81,15 +74,6 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ displayName, avatarUri, updatedAt: new Date() })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
-
-  async updateUserEmail(userId: string, email: string): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set({ email, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return user;

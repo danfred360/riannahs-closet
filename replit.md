@@ -4,7 +4,7 @@
 
 Riannah's Closet is a cloud-based wardrobe management mobile app built with Expo and React Native. It allows users to catalog clothing items, create outfit combinations, and visually plan daily looks. The app features an organic/botanical aesthetic with hand-drawn floral illustrations, targeting a "garden journal meets fashion lookbook" feel.
 
-The app supports multi-user authentication with PostgreSQL database storage, designed for both web and mobile (iOS/Android) platforms with cloud-synced data.
+The app supports multi-user email-based authentication with PostgreSQL database storage, designed for both web and mobile (iOS/Android) platforms with cloud-synced data. Users register and log in with their email address, and can reset their password via email.
 
 ## User Preferences
 
