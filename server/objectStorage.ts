@@ -53,20 +53,23 @@ export async function getImageUrl(key: string): Promise<string | null> {
   const client = getClient();
   
   try {
-    console.log(`Downloading image with key: ${key}`);
     const result = await client.downloadAsBytes(key);
-    console.log(`Download result: ok=${result.ok}, value type=${typeof result.value}, value length=${result.value?.length}`);
     
     if (!result.ok || !result.value) {
-      console.log(`Download failed or empty: ok=${result.ok}`);
+      console.log(`Download failed for key: ${key}`);
       return null;
     }
     
+    // Handle both array-wrapped and direct buffer responses
+    const buffer = Array.isArray(result.value) ? result.value[0] : result.value;
+    
     const extension = key.split(".").pop()?.toLowerCase() || "jpeg";
-    const mimeType = extension === "png" ? "image/png" : "image/jpeg";
-    const bytes = result.value as unknown as Uint8Array;
-    const base64 = Buffer.from(bytes).toString("base64");
-    console.log(`Base64 encoded, length: ${base64.length}`);
+    let mimeType = "image/jpeg";
+    if (extension === "png") mimeType = "image/png";
+    else if (extension === "webp") mimeType = "image/webp";
+    else if (extension === "gif") mimeType = "image/gif";
+    
+    const base64 = Buffer.from(buffer).toString("base64");
     return `data:${mimeType};base64,${base64}`;
   } catch (error) {
     console.error("Error downloading image:", error);
