@@ -1,13 +1,16 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Platform } from "react-native";
 
+// Production domain - all mobile traffic goes through Cloudflare
+const PRODUCTION_DOMAIN = "riannahscloset.com";
+
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
   // EXPO_PUBLIC_DOMAIN is set in development to include the API port (:5000)
-  // In production, it may not be set, so we fall back to relative URLs
+  // In production, it falls back to the hardcoded production domain
   const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
 
   // On web platform
@@ -22,14 +25,10 @@ export function getApiUrl(): string {
     return window.location.origin + "/";
   }
 
-  // Mobile needs the full URL with domain
-  let host = expoDomain;
+  // Mobile: use EXPO_PUBLIC_DOMAIN in development, production domain otherwise
+  const host = expoDomain || PRODUCTION_DOMAIN;
 
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
-  }
-
-  let url = new URL(`https://${host}`);
+  const url = new URL(`https://${host}`);
   console.log("Mobile API URL:", url.href);
 
   return url.href;
