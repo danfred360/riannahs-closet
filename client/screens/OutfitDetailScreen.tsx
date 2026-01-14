@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Alert } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,7 +12,7 @@ import { TagChip } from "@/components/TagChip";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
-import { getOutfits, getClothingItems, getPlannedOutfits } from "@/lib/api";
+import { getOutfits, getClothingItems, getPlannedOutfits, deleteOutfit } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -88,6 +89,31 @@ export default function OutfitDetailScreen() {
   }, [navigation, route.params.outfitId, theme.text, outfit?.name]);
 
   const outfitItems = items.filter((item) => outfit?.itemIds.includes(item.id));
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Outfit",
+      `Are you sure you want to delete "${outfit?.name}"? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteOutfit(route.params.outfitId);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Error deleting outfit:", error);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Error", "Failed to delete outfit. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const displayedWearHistory = showAllWearHistory
     ? wearHistory
@@ -214,6 +240,16 @@ export default function OutfitDetailScreen() {
               </ThemedText>
             </View>
           )}
+
+          <Pressable
+            style={[styles.deleteButton, { borderColor: theme.error }]}
+            onPress={handleDelete}
+          >
+            <Feather name="trash-2" size={18} color={theme.error} />
+            <ThemedText style={[styles.deleteButtonText, { color: theme.error }]}>
+              Delete Outfit
+            </ThemedText>
+          </Pressable>
         </View>
       </ScrollView>
     </ThemedView>
@@ -299,5 +335,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: Spacing.md,
     gap: Spacing.xs,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing["2xl"],
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  deleteButtonText: {
+    fontWeight: "600",
   },
 });
