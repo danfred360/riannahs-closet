@@ -182,7 +182,16 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
 }
 
 export function generateId(): string {
-  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+  // crypto.randomUUID is not available on React Native, use fallback
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback: generate UUID-like string
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 const imageCache: Map<string, string> = new Map();
