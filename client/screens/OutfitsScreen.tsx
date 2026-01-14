@@ -20,6 +20,13 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type SortOption = "newest" | "recently-worn" | "least-worn" | "never-worn";
 
+const SORT_LABELS: Record<SortOption, string> = {
+  "newest": "Newest",
+  "recently-worn": "Recently Worn",
+  "least-worn": "Least Recently Worn",
+  "never-worn": "Never Worn",
+};
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ITEM_WIDTH = 160;
@@ -41,13 +48,6 @@ export default function OutfitsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
-
-  const sortLabels: Record<SortOption, string> = {
-    "newest": "Newest",
-    "recently-worn": "Recently Worn",
-    "least-worn": "Least Recently Worn",
-    "never-worn": "Never Worn",
-  };
 
   const getLastWornDate = useCallback((outfitId: string): Date | null => {
     const today = new Date();
@@ -247,7 +247,7 @@ export default function OutfitsScreen() {
                     { color: sortOption === option ? "#FFFFFF" : theme.textSecondary },
                   ]}
                 >
-                  {sortLabels[option]}
+                  {SORT_LABELS[option]}
                 </ThemedText>
               </Pressable>
             ))}

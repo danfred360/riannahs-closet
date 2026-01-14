@@ -99,7 +99,7 @@ export default function OutfitBuilderScreen() {
         </HeaderButton>
       ),
     });
-  }, [navigation, name, selectedItemIds, saving, theme]);
+  }, [navigation, name, selectedItemIds, tags, saving, theme]);
 
   const canSave = () => {
     return name.trim() && selectedItemIds.length > 0;
