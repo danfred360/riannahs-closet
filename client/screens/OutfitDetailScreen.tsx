@@ -122,7 +122,7 @@ export default function OutfitDetailScreen() {
               <Image
                 source={{ uri: item.imageUri }}
                 style={styles.itemImage}
-                contentFit="cover"
+                contentFit="contain"
                 transition={200}
               />
               <ThemedText type="small" numberOfLines={1} style={styles.itemName}>
