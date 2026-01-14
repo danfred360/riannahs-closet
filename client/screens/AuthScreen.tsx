@@ -9,8 +9,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -102,11 +102,9 @@ export default function AuthScreen() {
       ]}
     >
       <View style={styles.header}>
-        <Image
-          source={require("../../assets/images/icon.png")}
-          style={styles.logo}
-          contentFit="contain"
-        />
+        <View style={[styles.logoContainer, { backgroundColor: theme.primary }]}>
+          <Feather name="heart" size={40} color="white" />
+        </View>
         <ThemedText type="title" style={styles.title}>
           Riannah's Closet
         </ThemedText>
@@ -248,11 +246,7 @@ export default function AuthScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Image
-          source={require("../assets/images/botanical-divider.png")}
-          style={styles.divider}
-          contentFit="contain"
-        />
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
       </View>
     </KeyboardAwareScrollViewCompat>
   );
@@ -267,11 +261,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing["3xl"],
   },
-  logo: {
-    width: 100,
-    height: 100,
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Spacing.lg,
-    borderRadius: 20,
   },
   title: {
     textAlign: "center",
@@ -313,9 +309,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: Spacing["2xl"],
   },
-  divider: {
-    width: 150,
-    height: 40,
-    opacity: 0.4,
+  dividerLine: {
+    width: 100,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.5,
   },
 });
