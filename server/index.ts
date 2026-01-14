@@ -240,14 +240,12 @@ function configureExpoAndLanding(app: express.Application) {
     }
 
     if (req.path === "/") {
-      const userAgent = req.header("user-agent") || "";
-      const isMobile = isMobileUserAgent(userAgent);
-      
-      // Serve web app for desktop browsers, landing page for mobile
-      if (!isMobile && hasWebBuild) {
+      // Serve web app directly for all browsers (desktop and mobile)
+      if (hasWebBuild) {
         return res.sendFile(path.join(webDistPath, "index.html"));
       }
       
+      // Fallback to landing page only if no web build exists
       return serveLandingPage({
         req,
         res,
@@ -275,15 +273,8 @@ function configureExpoAndLanding(app: express.Application) {
         return next();
       }
       
-      const userAgent = req.header("user-agent") || "";
-      const isMobile = isMobileUserAgent(userAgent);
-      
-      // Serve SPA for desktop browsers, skip for mobile (they'll use Expo Go)
-      if (!isMobile) {
-        return res.sendFile(path.join(webDistPath, "index.html"));
-      }
-      
-      next();
+      // Serve SPA for all browsers (desktop and mobile web)
+      return res.sendFile(path.join(webDistPath, "index.html"));
     });
   }
 
