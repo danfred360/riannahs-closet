@@ -8,6 +8,12 @@
     "scheme": "riannahscloset",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/85944140-a9cb-4998-829c-b50296ae7d34"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.riannahscloset.app",

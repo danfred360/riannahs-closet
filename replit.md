@@ -70,6 +70,35 @@ Preferred communication style: Simple, everyday language.
 - APPLE_ID: ✅
 - APPLE_APP_SPECIFIC_PASSWORD: ✅
 
+## Over-the-Air (OTA) Updates
+
+### Configuration
+- **Runtime Version Policy**: `fingerprint` - automatically calculates compatibility
+- **Update URL**: `https://u.expo.dev/85944140-a9cb-4998-829c-b50296ae7d34`
+- **Channels**: `development`, `preview`, `production`
+
+### Pushing Updates
+After the app is in the App Store, push JavaScript updates without App Store review:
+
+```bash
+# Push update to production users
+eas update --branch production --message "Bug fix description"
+
+# Push update to preview/staging testers
+eas update --branch preview --message "Testing new feature"
+```
+
+### What Can Be Updated OTA
+- JavaScript code changes
+- Styling and UI tweaks
+- Images and assets
+- Bug fixes
+
+### What Requires New App Store Build
+- Native code changes
+- New native dependencies
+- Expo SDK upgrades
+
 ## External Dependencies
 
 ### Core Services
