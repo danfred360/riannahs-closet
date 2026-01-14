@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native"
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HeaderButton } from "@react-navigation/elements";
+import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { ThemedView } from "@/components/ThemedView";
@@ -24,6 +24,7 @@ export default function OutfitDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
 
   const [outfit, setOutfit] = useState<Outfit | null>(null);
@@ -109,7 +110,7 @@ export default function OutfitDetailScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: headerHeight + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
         ]}
       >
         <View style={styles.itemsGrid}>
@@ -229,7 +230,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scrollContent: {
-    paddingTop: Spacing.xl,
   },
   itemsGrid: {
     flexDirection: "row",
