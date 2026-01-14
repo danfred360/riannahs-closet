@@ -43,11 +43,11 @@ export default function OutfitsScreen() {
     });
   }, [outfits, searchQuery]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
       const [outfitData, itemData] = await Promise.all([
-        getOutfits(),
-        getClothingItems(),
+        getOutfits(forceRefresh),
+        getClothingItems(forceRefresh),
       ]);
       setOutfits(outfitData.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -62,11 +62,18 @@ export default function OutfitsScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData().then(() => {
+      Promise.all([getOutfits(true), getClothingItems(true)]).then(([freshOutfits, freshItems]) => {
+        setOutfits(freshOutfits.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ));
+        setItems(freshItems);
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadData);
+    const unsubscribe = navigation.addListener("focus", () => loadData());
     return unsubscribe;
   }, [navigation, loadData]);
 

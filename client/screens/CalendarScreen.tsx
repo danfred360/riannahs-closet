@@ -81,12 +81,12 @@ export default function CalendarScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showOutfitPicker, setShowOutfitPicker] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
       const [outfitData, itemData, plannedData] = await Promise.all([
-        getOutfits(),
-        getClothingItems(),
-        getPlannedOutfits(),
+        getOutfits(forceRefresh),
+        getClothingItems(forceRefresh),
+        getPlannedOutfits(forceRefresh),
       ]);
       setOutfits(outfitData);
       setItems(itemData);
@@ -99,11 +99,17 @@ export default function CalendarScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData().then(() => {
+      Promise.all([getOutfits(true), getClothingItems(true), getPlannedOutfits(true)]).then(([freshOutfits, freshItems, freshPlanned]) => {
+        setOutfits(freshOutfits);
+        setItems(freshItems);
+        setPlannedOutfits(freshPlanned);
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadData);
+    const unsubscribe = navigation.addListener("focus", () => loadData());
     return unsubscribe;
   }, [navigation, loadData]);
 

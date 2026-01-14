@@ -34,9 +34,9 @@ export default function WardrobeScreen() {
     ClothingCategory | "all"
   >("all");
 
-  const loadItems = useCallback(async () => {
+  const loadItems = useCallback(async (forceRefresh: boolean = false) => {
     try {
-      const clothingItems = await getClothingItems();
+      const clothingItems = await getClothingItems(forceRefresh);
       setItems(clothingItems.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
@@ -49,11 +49,17 @@ export default function WardrobeScreen() {
   }, []);
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    loadItems().then(() => {
+      getClothingItems(true).then((freshItems) => {
+        setItems(freshItems.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ));
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadItems);
+    const unsubscribe = navigation.addListener("focus", () => loadItems());
     return unsubscribe;
   }, [navigation, loadItems]);
 
