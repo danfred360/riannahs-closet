@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginBottom: Spacing.lg,
+    borderRadius: 16,
   },
   title: {
     textAlign: "center",
@@ -294,6 +295,6 @@ const styles = StyleSheet.create({
   divider: {
     width: 150,
     height: 40,
-    opacity: 0.5,
+    opacity: 0.4,
   },
 });
