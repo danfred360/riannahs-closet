@@ -173,7 +173,7 @@ export default function CalendarScreen() {
       await planOutfit(selectedDate, outfit.id);
       setShowOutfitPicker(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      loadData();
+      loadData(true);
     } catch (error) {
       console.error("Error planning outfit:", error);
     }
@@ -183,13 +183,14 @@ export default function CalendarScreen() {
     try {
       await removePlannedOutfit(plannedOutfitId);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      loadData();
+      loadData(true);
     } catch (error) {
       console.error("Error removing outfit:", error);
     }
   };
 
   const today = getDateString(new Date());
+  const isSelectedDatePast = selectedDate < today;
 
   return (
     <ThemedView style={styles.container}>
@@ -380,7 +381,9 @@ export default function CalendarScreen() {
               </View>
             ) : (
               <Button onPress={() => setShowOutfitPicker(true)}>
-                {selectedPlannedOutfits.length > 0 ? "Add another outfit" : "Plan an outfit"}
+                {selectedPlannedOutfits.length > 0 
+                  ? (isSelectedDatePast ? "Track another outfit" : "Add another outfit")
+                  : (isSelectedDatePast ? "Track an outfit" : "Plan an outfit")}
               </Button>
             )}
           </View>
