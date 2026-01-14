@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { authMiddleware, generateToken, verifyPassword, AuthRequest } from "./auth";
 import { insertUserSchema, insertClothingItemSchema, insertOutfitSchema, insertPlannedOutfitSchema } from "@shared/schema";
 import { z } from "zod";
-import { uploadImage, getImageUrl, deleteImage } from "./objectStorage";
+import { uploadImage, getImageUrl, deleteImage, isUserImage } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v1/auth/register", async (req, res) => {
@@ -108,6 +108,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/v1/images/:key(*)", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
+      
+      // Security check: users can only access their own images
+      if (!isUserImage(req.userId!, key)) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const dataUrl = await getImageUrl(key);
       if (!dataUrl) {
         return res.status(404).json({ error: "Image not found" });
@@ -122,6 +128,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/v1/images/:key(*)", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
+      
+      // Security check: users can only delete their own images
+      if (!isUserImage(req.userId!, key)) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const success = await deleteImage(key);
       if (!success) {
         return res.status(500).json({ error: "Failed to delete image" });

@@ -1,16 +1,21 @@
 import { Client } from "@replit/object-storage";
 
-function getBucketName(): string {
-  return process.env.OBJECT_STORAGE_BUCKET || "riannahscloset-bucket-dev";
+function getBucketId(): string | undefined {
+  return process.env.OBJECT_STORAGE_BUCKET_ID;
 }
 
 let client: Client | null = null;
 
 function getClient(): Client {
   if (!client) {
-    client = new Client();
+    const bucketId = getBucketId();
+    client = bucketId ? new Client({ bucketId }) : new Client();
   }
   return client;
+}
+
+export function isUserImage(userId: string, key: string): boolean {
+  return key.startsWith(`users/${userId}/`);
 }
 
 export async function uploadImage(
