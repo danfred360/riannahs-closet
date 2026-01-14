@@ -32,9 +32,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Architectural Decisions
 
-1. **Local-first data storage**: All wardrobe data stored in AsyncStorage rather than server database
-   - Rationale: Single-user app without account requirements
-   - Trade-off: No cloud sync, but simpler architecture and works offline
+1. **Cloud-synced data with local caching**: Data stored in PostgreSQL, cached locally in AsyncStorage
+   - Cache system in `client/lib/cache.ts` with 5-minute TTL
+   - User-scoped cache keys prevent data leakage between accounts
+   - Cache automatically invalidated on create/update/delete operations
+   - Cache cleared on logout for security
 
 2. **File-based navigation structure**: Each tab has its own stack navigator
    - Pattern: `client/navigation/[Feature]StackNavigator.tsx`

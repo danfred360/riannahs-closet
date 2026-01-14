@@ -3,7 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "@/lib/query-client";
-import { setAuthToken } from "@/lib/api";
+import { setAuthToken, invalidateAllCache } from "@/lib/api";
+import { setCacheUserId } from "@/lib/cache";
 
 interface User {
   id: string;
@@ -75,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        setCacheUserId(userData.id);
         return true;
       }
       return false;
@@ -133,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthToken(data.token);
       setToken(data.token);
       setUser(data.user);
+      setCacheUserId(data.user.id);
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
@@ -158,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthToken(data.token);
       setToken(data.token);
       setUser(data.user);
+      setCacheUserId(data.user.id);
       return { success: true };
     } catch (error) {
       console.error("Registration error:", error);
@@ -167,7 +171,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await removeToken();
+    await invalidateAllCache();
     setAuthToken(null);
+    setCacheUserId(null);
     setToken(null);
     setUser(null);
   }, []);
