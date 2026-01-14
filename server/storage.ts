@@ -1,11 +1,12 @@
 import { db } from "./db";
-import { eq, and, notInArray, sql } from "drizzle-orm";
+import { eq, and, notInArray, sql, gt, lt } from "drizzle-orm";
 import {
   users,
   clothingItems,
   outfits,
   outfitItems,
   plannedOutfits,
+  passwordResetTokens,
   type User,
   type InsertUser,
   type ClothingItem,
@@ -14,6 +15,7 @@ import {
   type InsertOutfit,
   type PlannedOutfit,
   type InsertPlannedOutfit,
+  type PasswordResetToken,
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 
@@ -22,8 +24,16 @@ const SALT_ROUNDS = 10;
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserProfile(userId: string, displayName: string | null, avatarUri: string | null): Promise<User | undefined>;
+  updateUserEmail(userId: string, email: string): Promise<User | undefined>;
+  updateUserPassword(userId: string, password: string): Promise<User | undefined>;
+  
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  deletePasswordResetToken(token: string): Promise<boolean>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
   
   getClothingItems(userId: string): Promise<ClothingItem[]>;
   getClothingItem(userId: string, itemId: string): Promise<ClothingItem | undefined>;
@@ -53,6 +63,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const hashedPassword = await bcrypt.hash(insertUser.password, SALT_ROUNDS);
     const [user] = await db
@@ -69,6 +84,51 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async updateUserEmail(userId: string, email: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ email, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateUserPassword(userId: string, password: string): Promise<User | undefined> {
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const [user] = await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    const [resetToken] = await db
+      .insert(passwordResetTokens)
+      .values({ userId, token, expiresAt })
+      .returning();
+    return resetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(and(eq(passwordResetTokens.token, token), gt(passwordResetTokens.expiresAt, new Date())));
+    return resetToken;
+  }
+
+  async deletePasswordResetToken(token: string): Promise<boolean> {
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+    return true;
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    await db.delete(passwordResetTokens).where(lt(passwordResetTokens.expiresAt, new Date()));
   }
 
   async getClothingItems(userId: string): Promise<ClothingItem[]> {

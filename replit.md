@@ -104,6 +104,7 @@ eas update --branch preview --message "Testing new feature"
 ### Core Services
 - **PostgreSQL**: Database provisioned via Replit (connection via DATABASE_URL)
 - **Drizzle ORM**: Database toolkit with schema-first design
+- **Resend**: Email service for password reset functionality (via Replit integration)
 
 ### Third-Party Libraries
 - **expo-image-picker**: For capturing/selecting clothing photos
@@ -123,7 +124,27 @@ eas update --branch preview --message "Testing new feature"
 - **Update Required**: When adding new API endpoints, update this file to include them
 - **Endpoints documented**:
   - Authentication: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
-  - Profile: `/api/v1/profile`
+  - Password Reset: `/api/v1/auth/forgot-password`, `/api/v1/auth/verify-reset-token`, `/api/v1/auth/reset-password`
+  - Profile: `/api/v1/profile`, `/api/v1/profile/email`
   - Clothing Items: `/api/v1/items`, `/api/v1/items/{id}`
   - Outfits: `/api/v1/outfits`, `/api/v1/outfits/{id}`
   - Planner: `/api/v1/planner`, `/api/v1/planner/{id}`
+
+## Password Reset Flow
+
+### How It Works
+1. User enters email on ForgotPasswordScreen
+2. Backend generates 6-digit reset code, stores it with 1-hour expiry
+3. Resend sends email with reset code
+4. User enters code on ResetPasswordScreen
+5. Backend verifies code (checks expiry) and updates password
+
+### Security Features
+- Rate limiting: 3 requests per email per 15 minutes
+- Token expiry: 1 hour
+- Previous tokens for user are deleted when new one is created
+- Generic success message prevents email enumeration
+
+### Database Tables
+- `users.email` - Optional email field for password reset
+- `password_reset_tokens` - Stores reset tokens with user_id, token, expires_at

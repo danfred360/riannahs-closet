@@ -5,9 +5,10 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -16,11 +17,15 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { AuthStackParamList } from "@/navigation/AuthStackNavigator";
+
+type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "Auth">;
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { login, register } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
 
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
@@ -191,6 +196,17 @@ export default function AuthScreen() {
             </ThemedText>
           </ThemedText>
         </Pressable>
+
+        {isLogin ? (
+          <Pressable
+            onPress={() => navigation.navigate("ForgotPassword")}
+            style={styles.forgotButton}
+          >
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              Forgot your password?
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={styles.footer}>
@@ -247,6 +263,10 @@ const styles = StyleSheet.create({
   toggleButton: {
     alignItems: "center",
     paddingVertical: Spacing.md,
+  },
+  forgotButton: {
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
   },
   footer: {
     flex: 1,

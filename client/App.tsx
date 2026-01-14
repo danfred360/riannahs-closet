@@ -22,7 +22,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
-import AuthScreen from "@/screens/AuthScreen";
+import AuthStackNavigator from "@/navigation/AuthStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
@@ -41,7 +41,7 @@ function AppContent() {
   }
 
   if (!user) {
-    return <AuthScreen />;
+    return <AuthStackNavigator />;
   }
 
   return <RootStackNavigator />;

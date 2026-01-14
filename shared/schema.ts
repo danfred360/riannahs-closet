@@ -17,11 +17,24 @@ export const users = pgTable("users", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
+  email: text("email").unique(),
   password: text("password").notNull(),
   displayName: text("display_name"),
   avatarUri: text("avatar_uri"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const clothingItems = pgTable("clothing_items", {
@@ -125,7 +138,17 @@ export const plannedOutfitsRelations = relations(plannedOutfits, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
 });
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export const insertClothingItemSchema = createInsertSchema(clothingItems).omit({
   id: true,

@@ -5,6 +5,30 @@ import { authMiddleware, generateToken, verifyPassword, AuthRequest } from "./au
 import { insertUserSchema, insertClothingItemSchema, insertOutfitSchema, insertPlannedOutfitSchema } from "@shared/schema";
 import { z } from "zod";
 import { uploadImage, getImageUrl, deleteImage, isUserImage } from "./objectStorage";
+import { sendPasswordResetEmail } from "./email";
+import crypto from "crypto";
+
+const passwordResetRateLimiter = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 3;
+
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const key = email.toLowerCase();
+  const entry = passwordResetRateLimiter.get(key);
+  
+  if (!entry || now > entry.resetAt) {
+    passwordResetRateLimiter.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v1/auth/register", async (req, res) => {
@@ -87,6 +111,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/v1/profile/email", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== req.userId) {
+        return res.status(409).json({ error: "Email already in use" });
+      }
+
+      const user = await storage.updateUserEmail(req.userId!, email);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ id: user.id, username: user.username, email: user.email, displayName: user.displayName, avatarUri: user.avatarUri });
+    } catch (error) {
+      console.error("Update email error:", error);
+      res.status(500).json({ error: "Failed to update email" });
+    }
+  });
+
+  app.post("/api/v1/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      if (!checkRateLimit(email)) {
+        return res.status(429).json({ error: "Too many requests. Please try again later." });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.json({ message: "If an account with that email exists, a reset code has been sent." });
+      }
+
+      const resetToken = crypto.randomInt(100000, 999999).toString();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
+
+      const appUrl = process.env.EXPO_PUBLIC_DOMAIN 
+        ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` 
+        : 'https://riannahscloset.com';
+      
+      await sendPasswordResetEmail(email, resetToken, appUrl);
+
+      res.json({ message: "If an account with that email exists, a reset code has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
+  app.post("/api/v1/auth/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.body;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Reset code is required" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid or expired reset code" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error("Verify reset token error:", error);
+      res.status(500).json({ error: "Failed to verify reset code" });
+    }
+  });
+
+  app.post("/api/v1/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Reset code is required" });
+      }
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ error: "Invalid or expired reset code" });
+      }
+
+      await storage.updateUserPassword(resetToken.userId, newPassword);
+      await storage.deletePasswordResetToken(token);
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
 
