@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { authMiddleware, generateToken, verifyPassword, AuthRequest } from "./auth";
 import { insertUserSchema, insertClothingItemSchema, insertOutfitSchema, insertPlannedOutfitSchema } from "@shared/schema";
 import { z } from "zod";
+import { uploadImage, getImageUrl, deleteImage } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/v1/auth/register", async (req, res) => {
@@ -86,6 +87,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  app.post("/api/v1/images/upload", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { imageData, fileName } = req.body;
+      if (!imageData || !fileName) {
+        return res.status(400).json({ error: "Missing imageData or fileName" });
+      }
+
+      const key = await uploadImage(req.userId!, imageData, fileName);
+      res.json({ key, url: `/api/v1/images/${encodeURIComponent(key)}` });
+    } catch (error) {
+      console.error("Image upload error:", error);
+      res.status(500).json({ error: "Failed to upload image" });
+    }
+  });
+
+  app.get("/api/v1/images/:key(*)", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const key = decodeURIComponent(req.params.key);
+      const dataUrl = await getImageUrl(key);
+      if (!dataUrl) {
+        return res.status(404).json({ error: "Image not found" });
+      }
+      res.json({ dataUrl });
+    } catch (error) {
+      console.error("Image download error:", error);
+      res.status(500).json({ error: "Failed to download image" });
+    }
+  });
+
+  app.delete("/api/v1/images/:key(*)", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const key = decodeURIComponent(req.params.key);
+      const success = await deleteImage(key);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete image" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Image delete error:", error);
+      res.status(500).json({ error: "Failed to delete image" });
     }
   });
 

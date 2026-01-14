@@ -112,6 +112,27 @@
         "properties": {
           "error": { "type": "string" }
         }
+      },
+      "ImageUploadInput": {
+        "type": "object",
+        "required": ["imageData", "fileName"],
+        "properties": {
+          "imageData": { "type": "string", "description": "Base64-encoded image data" },
+          "fileName": { "type": "string", "description": "File name for the image" }
+        }
+      },
+      "ImageUploadResponse": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string", "description": "Object storage key for the uploaded image" },
+          "url": { "type": "string", "description": "Relative URL to access the image" }
+        }
+      },
+      "ImageDataResponse": {
+        "type": "object",
+        "properties": {
+          "dataUrl": { "type": "string", "description": "Base64 data URL of the image" }
+        }
       }
     }
   },
@@ -218,6 +239,118 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/images/upload": {
+      "post": {
+        "summary": "Upload an image to object storage",
+        "tags": ["Images"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImageUploadInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageUploadResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/images/{key}": {
+      "get": {
+        "summary": "Get image data URL",
+        "tags": ["Images"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object storage key for the image"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image data URL",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageDataResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Image not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an image",
+        "tags": ["Images"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object storage key for the image"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to delete image",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }

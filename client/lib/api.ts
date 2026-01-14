@@ -185,4 +185,46 @@ export function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
 }
 
+const imageCache: Map<string, string> = new Map();
+
+export async function uploadImage(imageData: string, fileName: string): Promise<{ key: string; url: string }> {
+  const result = await apiRequest<{ key: string; url: string }>("/api/v1/images/upload", {
+    method: "POST",
+    body: JSON.stringify({ imageData, fileName }),
+  });
+  return result;
+}
+
+export async function getImageDataUrl(key: string): Promise<string | null> {
+  if (imageCache.has(key)) {
+    return imageCache.get(key)!;
+  }
+  
+  try {
+    const result = await apiRequest<{ dataUrl: string }>(`/api/v1/images/${encodeURIComponent(key)}`);
+    imageCache.set(key, result.dataUrl);
+    return result.dataUrl;
+  } catch (error) {
+    console.error("Failed to get image:", error);
+    return null;
+  }
+}
+
+export async function deleteImage(key: string): Promise<boolean> {
+  try {
+    await apiRequest<{ success: boolean }>(`/api/v1/images/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+    });
+    imageCache.delete(key);
+    return true;
+  } catch (error) {
+    console.error("Failed to delete image:", error);
+    return false;
+  }
+}
+
+export function clearImageCache(): void {
+  imageCache.clear();
+}
+
 export { invalidateAllCache } from "./cache";

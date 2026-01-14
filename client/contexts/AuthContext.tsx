@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "@/lib/query-client";
-import { setAuthToken, invalidateAllCache } from "@/lib/api";
+import { setAuthToken, invalidateAllCache, clearImageCache } from "@/lib/api";
 import { setCacheUserId } from "@/lib/cache";
 
 interface User {
@@ -172,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await removeToken();
     await invalidateAllCache();
+    clearImageCache();
     setAuthToken(null);
     setCacheUserId(null);
     setToken(null);
