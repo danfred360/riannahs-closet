@@ -1,32 +1,38 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Platform } from "react-native";
 
-// Production domain - all mobile traffic goes through Cloudflare
-const PRODUCTION_DOMAIN = "riannahscloset.com";
+// EXPO_PUBLIC_API_DOMAIN: Set at build time to configure which backend the app connects to
+// - For production builds: "riannahscloset.com"
+// - For staging/test builds: your dev deployment domain
+// This is injected via EAS build secrets or eas.json env configuration
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
+ * Gets the base URL for the Express API server
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // EXPO_PUBLIC_DOMAIN is set in development to include the API port (:5000)
-  // In production, it falls back to the hardcoded production domain
-  const expoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+  // EXPO_PUBLIC_API_DOMAIN is the production API domain, set at build time
+  // EXPO_PUBLIC_DOMAIN is set in development for the Replit dev server
+  const apiDomain = process.env.EXPO_PUBLIC_API_DOMAIN;
+  const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
 
   // On web platform
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    // If EXPO_PUBLIC_DOMAIN is set (development), use it for API calls
-    // This ensures we hit the Express server on port 5000, not Metro on 8081
-    if (expoDomain) {
-      return `https://${expoDomain}/`;
+    // Development: use the dev domain (includes port :5000)
+    if (devDomain) {
+      return `https://${devDomain}/`;
     }
     
-    // In production/deployed builds, use relative URLs (same origin)
+    // Production web: use relative URLs (same origin)
     return window.location.origin + "/";
   }
 
-  // Mobile: use EXPO_PUBLIC_DOMAIN in development, production domain otherwise
-  const host = expoDomain || PRODUCTION_DOMAIN;
+  // Mobile: prefer API domain (production), fall back to dev domain
+  const host = apiDomain || devDomain;
+
+  if (!host) {
+    throw new Error("EXPO_PUBLIC_API_DOMAIN or EXPO_PUBLIC_DOMAIN must be set");
+  }
 
   const url = new URL(`https://${host}`);
   console.log("Mobile API URL:", url.href);
