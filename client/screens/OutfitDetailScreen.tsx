@@ -236,10 +236,10 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   itemCard: {
-    width: 100,
+    width: 150,
     borderRadius: BorderRadius.md,
     overflow: "hidden",
     backgroundColor: "#f0f0f0",

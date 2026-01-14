@@ -225,8 +225,10 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
+    maxWidth: 400,
     aspectRatio: 1,
     backgroundColor: "#f0f0f0",
+    alignSelf: "center",
   },
   content: {
     padding: Spacing.lg,
