@@ -12,6 +12,7 @@ import { OutfitCard } from "@/components/OutfitCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { SkeletonGrid } from "@/components/SkeletonLoader";
+import { TagFilterDropdown } from "@/components/TagFilterDropdown";
 import { useTheme } from "@/hooks/useTheme";
 import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
 import { getOutfits, getClothingItems, getPlannedOutfits } from "@/lib/api";
@@ -48,6 +49,13 @@ export default function OutfitsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    outfits.forEach((outfit) => outfit.tags?.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet);
+  }, [outfits]);
 
   const getLastWornDate = useCallback((outfitId: string): Date | null => {
     const today = new Date();
@@ -67,11 +75,13 @@ export default function OutfitsScreen() {
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((outfit) => {
-        const nameMatch = outfit.name.toLowerCase().includes(query);
-        const tagMatch = outfit.tags?.some((tag) => tag.toLowerCase().includes(query));
-        return nameMatch || tagMatch;
-      });
+      filtered = filtered.filter((outfit) => outfit.name.toLowerCase().includes(query));
+    }
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((outfit) =>
+        selectedTags.some((tag) => outfit.tags?.includes(tag))
+      );
     }
 
     if (sortOption === "never-worn") {
@@ -110,7 +120,7 @@ export default function OutfitsScreen() {
     });
 
     return sorted;
-  }, [outfits, searchQuery, sortOption, getLastWornDate]);
+  }, [outfits, searchQuery, sortOption, selectedTags, getLastWornDate]);
 
   const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
@@ -211,7 +221,7 @@ export default function OutfitsScreen() {
             <Feather name="search" size={18} color={theme.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search by name or tag..."
+              placeholder="Search by name..."
               placeholderTextColor={theme.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -224,6 +234,11 @@ export default function OutfitsScreen() {
               </Pressable>
             ) : null}
           </View>
+          <TagFilterDropdown
+            availableTags={availableTags}
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 

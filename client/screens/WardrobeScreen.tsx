@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
+import { TagFilterDropdown } from "@/components/TagFilterDropdown";
 import { ClothingItemCard } from "@/components/ClothingItemCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
@@ -39,6 +40,13 @@ export default function WardrobeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<
     ClothingCategory | "all"
   >("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    items.forEach((item) => item.tags?.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet);
+  }, [items]);
 
   const loadItems = useCallback(async (forceRefresh: boolean = false) => {
     try {
@@ -84,14 +92,13 @@ export default function WardrobeScreen() {
   };
 
   const filteredItems = items.filter((item) => {
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === "all" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesTags =
+      selectedTags.length === 0 ||
+      selectedTags.some((tag) => item.tags?.includes(tag));
+    return matchesSearch && matchesCategory && matchesTags;
   });
 
   const handleAddItem = () => {
@@ -154,11 +161,16 @@ export default function WardrobeScreen() {
             <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search items or tags..."
+              placeholder="Search by name..."
             />
             <CategoryFilter
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
+            />
+            <TagFilterDropdown
+              availableTags={availableTags}
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
             />
           </View>
         }
