@@ -5,6 +5,7 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -26,11 +27,15 @@ type AuthStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "Auth">;
 
+const MAX_FORM_WIDTH = 400;
+
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { login, register } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > 600;
 
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -98,9 +103,14 @@ export default function AuthScreen() {
       style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
       contentContainerStyle={[
         styles.container,
-        { paddingTop: insets.top + Spacing["3xl"], paddingBottom: insets.bottom + Spacing.xl },
+        { 
+          paddingTop: insets.top + Spacing["3xl"], 
+          paddingBottom: insets.bottom + Spacing.xl,
+          alignItems: isWideScreen ? "center" : "stretch",
+        },
       ]}
     >
+      <View style={[styles.contentWrapper, isWideScreen && { maxWidth: MAX_FORM_WIDTH, width: "100%" }]}>
       <View style={styles.header}>
         <Image
           source={require("../../assets/images/icon.png")}
@@ -246,7 +256,7 @@ export default function AuthScreen() {
           </Pressable>
         ) : null}
       </View>
-
+      </View>
     </KeyboardAwareScrollViewCompat>
   );
 }
@@ -255,6 +265,9 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
+  },
+  contentWrapper: {
+    width: "100%",
   },
   header: {
     alignItems: "center",

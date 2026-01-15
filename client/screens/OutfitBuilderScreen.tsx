@@ -6,6 +6,8 @@ import {
   Pressable,
   Alert,
   FlatList,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -34,6 +36,9 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteParams = RouteProp<RootStackParamList, "OutfitBuilder">;
 
+const MAX_CONTENT_WIDTH = 600;
+const ITEM_SIZE = 100;
+
 export default function OutfitBuilderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
@@ -42,6 +47,9 @@ export default function OutfitBuilderScreen() {
   const { theme } = useTheme();
 
   const isEditing = !!route.params?.outfitId;
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > MAX_CONTENT_WIDTH;
+  const numColumns = isWideScreen ? 4 : 3;
 
   const [name, setName] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
@@ -150,29 +158,45 @@ export default function OutfitBuilderScreen() {
     }
   };
 
+  const performDelete = async () => {
+    try {
+      await deleteOutfit(route.params!.outfitId!);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error deleting outfit:", error);
+      if (Platform.OS === "web") {
+        alert("Failed to delete outfit. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to delete outfit. Please try again.");
+      }
+    }
+  };
+
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Outfit",
-      "Are you sure you want to delete this outfit?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteOutfit(route.params!.outfitId!);
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-              navigation.goBack();
-            } catch (error) {
-              console.error("Error deleting outfit:", error);
-            }
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this outfit?"
+      );
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Outfit",
+        "Are you sure you want to delete this outfit?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: performDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const toggleItem = (itemId: string) => {
@@ -198,14 +222,17 @@ export default function OutfitBuilderScreen() {
       <Pressable
         style={[
           styles.itemCard,
-          { backgroundColor: theme.backgroundDefault },
+          { 
+            backgroundColor: theme.backgroundDefault,
+            width: ITEM_SIZE,
+          },
           isSelected && { borderColor: theme.primary, borderWidth: 2 },
         ]}
         onPress={() => toggleItem(item.id)}
       >
         <ObjectStorageImage
           imageUri={item.imageUri}
-          style={styles.itemImage}
+          style={[styles.itemImage, { width: ITEM_SIZE, height: ITEM_SIZE }]}
           contentFit="cover"
         />
         {isSelected ? (
@@ -341,7 +368,8 @@ export default function OutfitBuilderScreen() {
         ) : (
           <FlatList
             data={filteredItems}
-            numColumns={3}
+            key={numColumns}
+            numColumns={numColumns}
             keyExtractor={(item) => item.id}
             contentContainerStyle={[
               styles.itemsGrid,
@@ -460,14 +488,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   itemCard: {
-    flex: 1,
     borderRadius: BorderRadius.sm,
     overflow: "hidden",
     position: "relative",
   },
   itemImage: {
-    width: "100%",
-    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
   },
   checkBadge: {
     position: "absolute",
