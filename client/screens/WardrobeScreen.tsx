@@ -158,19 +158,23 @@ export default function WardrobeScreen() {
         ]}
         ListHeaderComponent={
           <View>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search by name..."
-            />
+            <View style={styles.searchRow}>
+              <View style={styles.searchBarWrapper}>
+                <SearchBar
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search by name..."
+                />
+              </View>
+              <TagFilterDropdown
+                availableTags={availableTags}
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+              />
+            </View>
             <CategoryFilter
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
-            />
-            <TagFilterDropdown
-              availableTags={availableTags}
-              selectedTags={selectedTags}
-              onTagsChange={setSelectedTags}
             />
           </View>
         }
@@ -211,5 +215,14 @@ const styles = StyleSheet.create({
   gridItem: {
     width: ITEM_WIDTH,
     maxWidth: ITEM_WIDTH,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  searchBarWrapper: {
+    flex: 1,
   },
 });

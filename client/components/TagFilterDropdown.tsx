@@ -67,40 +67,14 @@ export function TagFilterDropdown({
         onPress={handleOpen}
       >
         <Feather name="tag" size={16} color={selectedTags.length > 0 ? theme.primary : theme.textSecondary} />
-        <ThemedText
-          style={[
-            styles.dropdownText,
-            { color: selectedTags.length > 0 ? theme.primary : theme.textSecondary },
-          ]}
-          numberOfLines={1}
-        >
-          {selectedTags.length === 0
-            ? "Filter by tags"
-            : selectedTags.length === 1
-            ? selectedTags[0]
-            : `${selectedTags.length} tags`}
-        </ThemedText>
-        <Feather name="chevron-down" size={16} color={theme.textSecondary} />
+        {selectedTags.length > 0 ? (
+          <View style={styles.badgeContainer}>
+            <ThemedText style={[styles.badgeText, { color: theme.buttonText, backgroundColor: theme.primary }]}>
+              {selectedTags.length}
+            </ThemedText>
+          </View>
+        ) : null}
       </Pressable>
-
-      {selectedTags.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.selectedTagsRow}
-          contentContainerStyle={styles.selectedTagsContent}
-        >
-          {selectedTags.map((tag) => (
-            <TagChip
-              key={tag}
-              label={tag}
-              size="small"
-              selected
-              onRemove={() => toggleTag(tag)}
-            />
-          ))}
-        </ScrollView>
-      ) : null}
 
       <Modal
         visible={isOpen}
@@ -172,20 +146,25 @@ const styles = StyleSheet.create({
   dropdownButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
+    minWidth: 44,
+    minHeight: 44,
   },
-  dropdownText: {
-    flex: 1,
-    fontSize: Typography.body.fontSize,
+  badgeContainer: {
+    position: "absolute",
+    top: -4,
+    right: -4,
   },
-  selectedTagsRow: {
-    marginTop: Spacing.sm,
-  },
-  selectedTagsContent: {
-    gap: Spacing.xs,
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: "hidden",
   },
   overlay: {
     flex: 1,

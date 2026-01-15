@@ -217,28 +217,30 @@ export default function OutfitsScreen() {
     <ThemedView style={styles.container}>
       {outfits.length > 0 ? (
         <View style={[styles.searchWrapper, { paddingTop: headerHeight + Spacing.lg }]}>
-          <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
-            <Feather name="search" size={18} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search by name..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
+          <View style={styles.searchRow}>
+            <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
+              <Feather name="search" size={18} color={theme.textSecondary} />
+              <TextInput
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search by name..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 ? (
+                <Pressable onPress={() => setSearchQuery("")}>
+                  <Feather name="x" size={18} color={theme.textSecondary} />
+                </Pressable>
+              ) : null}
+            </View>
+            <TagFilterDropdown
+              availableTags={availableTags}
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
             />
-            {searchQuery.length > 0 ? (
-              <Pressable onPress={() => setSearchQuery("")}>
-                <Feather name="x" size={18} color={theme.textSecondary} />
-              </Pressable>
-            ) : null}
           </View>
-          <TagFilterDropdown
-            availableTags={availableTags}
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
-          />
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 
@@ -322,13 +324,19 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH,
     maxWidth: ITEM_WIDTH,
   },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.lg,
     gap: Spacing.sm,
   },
   searchInput: {
