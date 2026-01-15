@@ -22,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
+import { TagSelector } from "@/components/TagSelector";
 import { useTheme } from "@/hooks/useTheme";
 import {
   ClothingItem,
@@ -62,7 +63,7 @@ export default function AddEditItemScreen() {
   const [imageUri, setImageUri] = useState("");
   const [category, setCategory] = useState<ClothingCategory>("tops");
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
+  const [allItems, setAllItems] = useState<ClothingItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
 
@@ -75,6 +76,7 @@ export default function AddEditItemScreen() {
   const loadItem = async () => {
     try {
       const items = await getClothingItems();
+      setAllItems(items);
       const item = items.find((i) => i.id === route.params?.itemId);
       if (item) {
         setName(item.name);
@@ -87,6 +89,18 @@ export default function AddEditItemScreen() {
       console.error("Error loading item:", error);
     }
   };
+
+  useEffect(() => {
+    if (!isEditing) {
+      getClothingItems().then(setAllItems).catch(console.error);
+    }
+  }, [isEditing]);
+
+  const existingTags = React.useMemo(() => {
+    const tagSet = new Set<string>();
+    allItems.forEach((item) => item.tags?.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet);
+  }, [allItems]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -209,19 +223,6 @@ export default function AddEditItemScreen() {
     } catch (error) {
       console.error("Error taking photo:", error);
     }
-  };
-
-  const handleAddTag = () => {
-    const tag = newTag.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setNewTag("");
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
   };
 
   const handleSave = async () => {
@@ -386,44 +387,14 @@ export default function AddEditItemScreen() {
 
         <View style={styles.field}>
           <ThemedText type="caption" style={styles.label}>
-            Tags (optional)
+            Tags
           </ThemedText>
-          <View style={styles.tagInputRow}>
-            <TextInput
-              style={[
-                styles.tagInput,
-                {
-                  color: theme.text,
-                  backgroundColor: theme.backgroundSecondary,
-                  fontFamily: Typography.body.fontFamily,
-                },
-              ]}
-              value={newTag}
-              onChangeText={setNewTag}
-              placeholder="Add a tag..."
-              placeholderTextColor={theme.textSecondary}
-              onSubmitEditing={handleAddTag}
-              returnKeyType="done"
-            />
-            <Pressable
-              style={[styles.addTagButton, { backgroundColor: theme.primary }]}
-              onPress={handleAddTag}
-            >
-              <Feather name="plus" size={20} color={theme.buttonText} />
-            </Pressable>
-          </View>
-          {tags.length > 0 ? (
-            <View style={styles.tagsRow}>
-              {tags.map((tag) => (
-                <TagChip
-                  key={tag}
-                  label={tag}
-                  size="small"
-                  onRemove={() => handleRemoveTag(tag)}
-                />
-              ))}
-            </View>
-          ) : null}
+          <TagSelector
+            selectedTags={tags}
+            onTagsChange={setTags}
+            existingTags={existingTags}
+            placeholder="Add a tag..."
+          />
         </View>
         </View>
       </View>

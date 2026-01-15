@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Platform, Alert, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -12,7 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
-import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
+import { Outfit, ClothingItem, PlannedOutfit, CORE_CATEGORIES, ACCESSORY_CATEGORIES } from "@/lib/types";
 import { getOutfits, getClothingItems, getPlannedOutfits, deleteOutfit } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -22,7 +22,7 @@ type RouteParams = RouteProp<RootStackParamList, "OutfitDetail">;
 
 const INITIAL_WEAR_HISTORY_COUNT = 3;
 
-const ITEM_IMAGE_SIZE = 120;
+const ITEM_IMAGE_SIZE = 100;
 const MAX_CONTENT_WIDTH = 500;
 
 export default function OutfitDetailScreen() {
@@ -95,7 +95,15 @@ export default function OutfitDetailScreen() {
     });
   }, [navigation, route.params.outfitId, theme.text, outfit?.name]);
 
-  const outfitItems = items.filter((item) => outfit?.itemIds.includes(item.id));
+  const coreItems = useMemo(() => {
+    if (!outfit) return [];
+    return items.filter((item) => outfit.itemIds.includes(item.id));
+  }, [items, outfit]);
+
+  const accessoryItems = useMemo(() => {
+    if (!outfit) return [];
+    return items.filter((item) => outfit.accessoryIds?.includes(item.id));
+  }, [items, outfit]);
 
   const performDelete = async () => {
     try {
@@ -145,6 +153,28 @@ export default function OutfitDetailScreen() {
 
   const hasMoreHistory = wearHistory.length > INITIAL_WEAR_HISTORY_COUNT;
 
+  const renderItemsGrid = (itemsList: ClothingItem[]) => (
+    <View style={styles.itemsGrid}>
+      {itemsList.map((item) => (
+        <Pressable
+          key={item.id}
+          style={[styles.itemCard, { width: ITEM_IMAGE_SIZE }]}
+          onPress={() => navigation.navigate("ItemDetail", { itemId: item.id })}
+        >
+          <ObjectStorageImage
+            imageUri={item.imageUri}
+            style={[styles.itemImage, { width: ITEM_IMAGE_SIZE, height: ITEM_IMAGE_SIZE }]}
+            contentFit="cover"
+            transition={200}
+          />
+          <ThemedText type="small" numberOfLines={1} style={styles.itemName}>
+            {item.name}
+          </ThemedText>
+        </Pressable>
+      ))}
+    </View>
+  );
+
   if (!outfit) {
     return (
       <ThemedView style={styles.container}>
@@ -168,118 +198,114 @@ export default function OutfitDetailScreen() {
         ]}
       >
         <View style={[styles.contentWrapper, isWideScreen && { maxWidth: MAX_CONTENT_WIDTH, width: "100%" }]}>
-        <View style={styles.itemsGrid}>
-          {outfitItems.map((item) => (
-            <Pressable
-              key={item.id}
-              style={[styles.itemCard, { width: ITEM_IMAGE_SIZE }]}
-              onPress={() => navigation.navigate("ItemDetail", { itemId: item.id })}
-            >
-              <ObjectStorageImage
-                imageUri={item.imageUri}
-                style={[styles.itemImage, { width: ITEM_IMAGE_SIZE, height: ITEM_IMAGE_SIZE }]}
-                contentFit="cover"
-                transition={200}
-              />
-              <ThemedText type="small" numberOfLines={1} style={styles.itemName}>
-                {item.name}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
+          <View style={styles.outfitSection}>
+            <ThemedText type="subheading" style={styles.sectionTitle}>
+              The Outfit
+            </ThemedText>
+            {renderItemsGrid(coreItems)}
+          </View>
 
-        <View style={styles.content}>
-          {outfit.tags.length > 0 ? (
-            <View style={styles.tagsSection}>
-              <ThemedText type="caption" style={styles.sectionLabel}>
-                Tags
+          {accessoryItems.length > 0 ? (
+            <View style={styles.accessorySection}>
+              <ThemedText type="subheading" style={styles.sectionTitle}>
+                Looks Good With
               </ThemedText>
-              <View style={styles.tagsRow}>
-                {outfit.tags.map((tag) => (
-                  <TagChip key={tag} label={tag} size="small" />
-                ))}
-              </View>
+              {renderItemsGrid(accessoryItems)}
             </View>
           ) : null}
 
-          <View style={styles.metaSection}>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Created{" "}
-              {new Date(outfit.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </ThemedText>
-          </View>
-
-          {wearHistory.length > 0 ? (
-            <View style={styles.wearHistorySection}>
-              <View style={styles.sectionHeader}>
+          <View style={styles.content}>
+            {outfit.tags.length > 0 ? (
+              <View style={styles.tagsSection}>
                 <ThemedText type="caption" style={styles.sectionLabel}>
-                  Recently Worn ({wearHistory.length} {wearHistory.length === 1 ? "time" : "times"})
+                  Tags
+                </ThemedText>
+                <View style={styles.tagsRow}>
+                  {outfit.tags.map((tag) => (
+                    <TagChip key={tag} label={tag} size="small" />
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.metaSection}>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                Created{" "}
+                {new Date(outfit.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </ThemedText>
+            </View>
+
+            {wearHistory.length > 0 ? (
+              <View style={styles.wearHistorySection}>
+                <View style={styles.sectionHeader}>
+                  <ThemedText type="caption" style={styles.sectionLabel}>
+                    Recently Worn ({wearHistory.length} {wearHistory.length === 1 ? "time" : "times"})
+                  </ThemedText>
+                </View>
+                <View style={styles.wearHistoryList}>
+                  {displayedWearHistory.map((planned) => {
+                    const planDate = new Date(planned.date + "T00:00:00");
+                    return (
+                      <View
+                        key={planned.id}
+                        style={[styles.wearHistoryItem, { backgroundColor: theme.backgroundSecondary }]}
+                      >
+                        <Feather name="check-circle" size={16} color={theme.primary} />
+                        <ThemedText type="body">
+                          {planDate.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: planDate.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
+                          })}
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
+                </View>
+                {hasMoreHistory ? (
+                  <Pressable
+                    style={styles.showMoreButton}
+                    onPress={() => setShowAllWearHistory(!showAllWearHistory)}
+                  >
+                    <ThemedText type="small" style={{ color: theme.primary }}>
+                      {showAllWearHistory
+                        ? "Show less"
+                        : `Show ${wearHistory.length - INITIAL_WEAR_HISTORY_COUNT} more`}
+                    </ThemedText>
+                    <Feather
+                      name={showAllWearHistory ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color={theme.primary}
+                    />
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : (
+              <View style={styles.wearHistorySection}>
+                <ThemedText type="caption" style={styles.sectionLabel}>
+                  Wear History
+                </ThemedText>
+                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  This outfit hasn't been worn yet.
                 </ThemedText>
               </View>
-              <View style={styles.wearHistoryList}>
-                {displayedWearHistory.map((planned) => {
-                  const planDate = new Date(planned.date + "T00:00:00");
-                  return (
-                    <View
-                      key={planned.id}
-                      style={[styles.wearHistoryItem, { backgroundColor: theme.backgroundSecondary }]}
-                    >
-                      <Feather name="check-circle" size={16} color={theme.primary} />
-                      <ThemedText type="body">
-                        {planDate.toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: planDate.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
-                        })}
-                      </ThemedText>
-                    </View>
-                  );
-                })}
-              </View>
-              {hasMoreHistory ? (
-                <Pressable
-                  style={styles.showMoreButton}
-                  onPress={() => setShowAllWearHistory(!showAllWearHistory)}
-                >
-                  <ThemedText type="small" style={{ color: theme.primary }}>
-                    {showAllWearHistory
-                      ? "Show less"
-                      : `Show ${wearHistory.length - INITIAL_WEAR_HISTORY_COUNT} more`}
-                  </ThemedText>
-                  <Feather
-                    name={showAllWearHistory ? "chevron-up" : "chevron-down"}
-                    size={16}
-                    color={theme.primary}
-                  />
-                </Pressable>
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.wearHistorySection}>
-              <ThemedText type="caption" style={styles.sectionLabel}>
-                Wear History
-              </ThemedText>
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                This outfit hasn't been worn yet.
-              </ThemedText>
-            </View>
-          )}
+            )}
 
-          <Pressable
-            style={[styles.deleteButton, { borderColor: theme.error }]}
-            onPress={handleDelete}
-          >
-            <Feather name="trash-2" size={18} color={theme.error} />
-            <ThemedText style={[styles.deleteButtonText, { color: theme.error }]}>
-              Delete Outfit
-            </ThemedText>
-          </Pressable>
-        </View>
+            <Pressable
+              style={[styles.deleteButton, { borderColor: theme.error }]}
+              onPress={handleDelete}
+            >
+              <Feather name="trash-2" size={18} color={theme.error} />
+              <ThemedText style={[styles.deleteButtonText, { color: theme.error }]}>
+                Delete Outfit
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </ThemedView>
@@ -300,12 +326,24 @@ const styles = StyleSheet.create({
   contentWrapper: {
     width: "100%",
   },
+  outfitSection: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  accessorySection: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  sectionTitle: {
+    marginBottom: Spacing.md,
+  },
   itemsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
-    justifyContent: "center",
   },
   itemCard: {
     borderRadius: BorderRadius.md,

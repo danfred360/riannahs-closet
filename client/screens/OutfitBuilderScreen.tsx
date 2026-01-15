@@ -367,7 +367,7 @@ export default function OutfitBuilderScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
+          <ThemedText type="subheading" style={styles.sectionTitle}>
             The Outfit
           </ThemedText>
           <ThemedText type="caption" style={styles.sectionSubtitle}>
@@ -395,7 +395,7 @@ export default function OutfitBuilderScreen() {
         </View>
 
         <View style={[styles.section, styles.accessorySection]}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
+          <ThemedText type="subheading" style={styles.sectionTitle}>
             Looks Good With
           </ThemedText>
           <ThemedText type="caption" style={styles.sectionSubtitle}>
