@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   FlatList,
   Platform,
   useWindowDimensions,
+  ScrollView,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,11 +19,17 @@ import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
-import { CategoryFilter } from "@/components/CategoryFilter";
-import { TagChip } from "@/components/TagChip";
+import { TagSelector } from "@/components/TagSelector";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
-import { ClothingItem, ClothingCategory, Outfit } from "@/lib/types";
+import {
+  ClothingItem,
+  ClothingCategory,
+  Outfit,
+  CORE_CATEGORIES,
+  ACCESSORY_CATEGORIES,
+  CATEGORY_LABELS,
+} from "@/lib/types";
 import {
   getClothingItems,
   getOutfits,
@@ -37,7 +44,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteParams = RouteProp<RootStackParamList, "OutfitBuilder">;
 
 const MAX_CONTENT_WIDTH = 600;
-const ITEM_SIZE = 100;
+const ITEM_SIZE = 80;
 
 export default function OutfitBuilderScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -49,18 +56,31 @@ export default function OutfitBuilderScreen() {
   const isEditing = !!route.params?.outfitId;
   const { width: windowWidth } = useWindowDimensions();
   const isWideScreen = windowWidth > MAX_CONTENT_WIDTH;
-  const numColumns = isWideScreen ? 4 : 3;
 
   const [name, setName] = useState("");
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [selectedCoreIds, setSelectedCoreIds] = useState<string[]>([]);
+  const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
   const [items, setItems] = useState<ClothingItem[]>([]);
-  const [filterCategory, setFilterCategory] = useState<
-    ClothingCategory | "all"
-  >("all");
   const [saving, setSaving] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
+  const [originalAccessoryIds, setOriginalAccessoryIds] = useState<string[]>([]);
+
+  const existingTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    items.forEach((item) => item.tags?.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet);
+  }, [items]);
+
+  const coreItems = useMemo(
+    () => items.filter((item) => CORE_CATEGORIES.includes(item.category)),
+    [items]
+  );
+
+  const accessoryItems = useMemo(
+    () => items.filter((item) => ACCESSORY_CATEGORIES.includes(item.category)),
+    [items]
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -72,7 +92,9 @@ export default function OutfitBuilderScreen() {
         const outfit = outfits.find((o) => o.id === route.params?.outfitId);
         if (outfit) {
           setName(outfit.name);
-          setSelectedItemIds(outfit.itemIds);
+          setSelectedCoreIds(outfit.itemIds || []);
+          setSelectedAccessoryIds(outfit.accessoryIds || []);
+          setOriginalAccessoryIds(outfit.accessoryIds || []);
           setTags(outfit.tags || []);
           setOriginalCreatedAt(outfit.createdAt);
         }
@@ -107,23 +129,10 @@ export default function OutfitBuilderScreen() {
         </HeaderButton>
       ),
     });
-  }, [navigation, name, selectedItemIds, tags, saving, theme]);
+  }, [navigation, name, selectedCoreIds, selectedAccessoryIds, tags, saving, theme]);
 
   const canSave = () => {
-    return name.trim() && selectedItemIds.length > 0;
-  };
-
-  const handleAddTag = () => {
-    const tag = newTag.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setNewTag("");
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
+    return name.trim() && selectedCoreIds.length > 0;
   };
 
   const handleSave = async () => {
@@ -135,7 +144,8 @@ export default function OutfitBuilderScreen() {
         await updateOutfit({
           id: route.params!.outfitId!,
           name: name.trim(),
-          itemIds: selectedItemIds,
+          itemIds: selectedCoreIds,
+          accessoryIds: selectedAccessoryIds,
           tags,
           createdAt: originalCreatedAt,
           updatedAt: new Date().toISOString(),
@@ -143,12 +153,15 @@ export default function OutfitBuilderScreen() {
       } else {
         await addOutfit({
           name: name.trim(),
-          itemIds: selectedItemIds,
+          itemIds: selectedCoreIds,
+          accessoryIds: selectedAccessoryIds,
           tags,
         });
       }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       navigation.goBack();
     } catch (error) {
       console.error("Error saving outfit:", error);
@@ -199,187 +212,216 @@ export default function OutfitBuilderScreen() {
     }
   };
 
-  const toggleItem = (itemId: string) => {
-    if (selectedItemIds.includes(itemId)) {
-      setSelectedItemIds(selectedItemIds.filter((id) => id !== itemId));
+  const toggleCoreItem = (itemId: string) => {
+    if (selectedCoreIds.includes(itemId)) {
+      setSelectedCoreIds(selectedCoreIds.filter((id) => id !== itemId));
     } else {
-      setSelectedItemIds([...selectedItemIds, itemId]);
+      setSelectedCoreIds([...selectedCoreIds, itemId]);
     }
-    Haptics.selectionAsync();
+    if (Platform.OS !== "web") {
+      Haptics.selectionAsync();
+    }
   };
 
-  const selectedItems = items.filter((item) =>
-    selectedItemIds.includes(item.id)
-  );
+  const toggleAccessoryItem = (itemId: string) => {
+    if (selectedAccessoryIds.includes(itemId)) {
+      setSelectedAccessoryIds(selectedAccessoryIds.filter((id) => id !== itemId));
+    } else {
+      setSelectedAccessoryIds([...selectedAccessoryIds, itemId]);
+    }
+    if (Platform.OS !== "web") {
+      Haptics.selectionAsync();
+    }
+  };
 
-  const filteredItems = items.filter(
-    (item) => filterCategory === "all" || item.category === filterCategory
-  );
-
-  const renderItem = ({ item }: { item: ClothingItem }) => {
-    const isSelected = selectedItemIds.includes(item.id);
-    return (
-      <Pressable
-        style={[
-          styles.itemCard,
-          { 
-            backgroundColor: theme.backgroundDefault,
-            width: ITEM_SIZE,
-          },
-          isSelected && { borderColor: theme.primary, borderWidth: 2 },
-        ]}
-        onPress={() => toggleItem(item.id)}
-      >
-        <ObjectStorageImage
-          imageUri={item.imageUri}
-          style={[styles.itemImage, { width: ITEM_SIZE, height: ITEM_SIZE }]}
-          contentFit="cover"
-        />
-        {isSelected ? (
-          <View
-            style={[styles.checkBadge, { backgroundColor: theme.primary }]}
+  const renderItemRow = (
+    categoryItems: ClothingItem[],
+    selectedIds: string[],
+    toggleFn: (id: string) => void
+  ) => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.itemRow}
+    >
+      {categoryItems.map((item) => {
+        const isSelected = selectedIds.includes(item.id);
+        return (
+          <Pressable
+            key={item.id}
+            style={[
+              styles.itemCard,
+              {
+                backgroundColor: theme.backgroundDefault,
+                width: ITEM_SIZE,
+              },
+              isSelected && { borderColor: theme.primary, borderWidth: 2 },
+            ]}
+            onPress={() => toggleFn(item.id)}
           >
-            <Feather name="check" size={14} color={theme.buttonText} />
-          </View>
-        ) : null}
-        <ThemedText type="small" numberOfLines={1} style={styles.itemName}>
-          {item.name}
-        </ThemedText>
-      </Pressable>
+            <ObjectStorageImage
+              imageUri={item.imageUri}
+              style={[styles.itemImage, { width: ITEM_SIZE, height: ITEM_SIZE }]}
+              contentFit="cover"
+            />
+            {isSelected ? (
+              <View
+                style={[styles.checkBadge, { backgroundColor: theme.primary }]}
+              >
+                <Feather name="check" size={12} color={theme.buttonText} />
+              </View>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+
+  const renderCategorySection = (
+    category: ClothingCategory,
+    categoryItems: ClothingItem[],
+    selectedIds: string[],
+    toggleFn: (id: string) => void
+  ) => {
+    if (categoryItems.length === 0) return null;
+    const selectedCount = categoryItems.filter((item) =>
+      selectedIds.includes(item.id)
+    ).length;
+
+    return (
+      <View key={category} style={styles.categorySection}>
+        <View style={styles.categoryHeader}>
+          <ThemedText type="caption" style={styles.categoryLabel}>
+            {CATEGORY_LABELS[category]}
+          </ThemedText>
+          {selectedCount > 0 ? (
+            <View style={[styles.countBadge, { backgroundColor: theme.primary }]}>
+              <ThemedText type="small" style={{ color: theme.buttonText }}>
+                {selectedCount}
+              </ThemedText>
+            </View>
+          ) : null}
+        </View>
+        {renderItemRow(categoryItems, selectedIds, toggleFn)}
+      </View>
     );
   };
 
+  const groupedCoreItems = useMemo(() => {
+    return CORE_CATEGORIES.map((category) => ({
+      category,
+      items: coreItems.filter((item) => item.category === category),
+    })).filter((group) => group.items.length > 0);
+  }, [coreItems]);
+
+  const groupedAccessoryItems = useMemo(() => {
+    return ACCESSORY_CATEGORIES.map((category) => ({
+      category,
+      items: accessoryItems.filter((item) => item.category === category),
+    })).filter((group) => group.items.length > 0);
+  }, [accessoryItems]);
+
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.nameSection, { paddingTop: headerHeight + Spacing.lg }]}>
-        <ThemedText type="caption" style={styles.label}>
-          Outfit Name
-        </ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: theme.text,
-              backgroundColor: theme.backgroundSecondary,
-              fontFamily: Typography.body.fontFamily,
-            },
-          ]}
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g., Casual Friday"
-          placeholderTextColor={theme.textSecondary}
-        />
-      </View>
-
-      <View style={styles.tagsSection}>
-        <ThemedText type="caption" style={styles.label}>
-          Tags (optional)
-        </ThemedText>
-        <View style={styles.tagInputRow}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: headerHeight + Spacing.lg,
+            paddingBottom: insets.bottom + (isEditing ? 100 : 40),
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.section}>
+          <ThemedText type="caption" style={styles.label}>
+            Outfit Name
+          </ThemedText>
           <TextInput
             style={[
-              styles.tagInput,
+              styles.input,
               {
                 color: theme.text,
                 backgroundColor: theme.backgroundSecondary,
                 fontFamily: Typography.body.fontFamily,
               },
             ]}
-            value={newTag}
-            onChangeText={setNewTag}
-            placeholder="Add a tag..."
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g., Casual Friday"
             placeholderTextColor={theme.textSecondary}
-            onSubmitEditing={handleAddTag}
-            returnKeyType="done"
           />
-          <Pressable
-            style={[styles.addTagButton, { backgroundColor: theme.primary }]}
-            onPress={handleAddTag}
-          >
-            <Feather name="plus" size={20} color={theme.buttonText} />
-          </Pressable>
         </View>
-        {tags.length > 0 ? (
-          <View style={styles.tagsRow}>
-            {tags.map((tag) => (
-              <TagChip
-                key={tag}
-                label={tag}
-                size="small"
-                onRemove={() => handleRemoveTag(tag)}
-              />
-            ))}
-          </View>
-        ) : null}
-      </View>
 
-      {selectedItems.length > 0 ? (
-        <View style={styles.previewSection}>
+        <View style={styles.section}>
           <ThemedText type="caption" style={styles.label}>
-            Selected Items ({selectedItems.length})
+            Tags
           </ThemedText>
-          <FlatList
-            data={selectedItems}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.previewList}
-            renderItem={({ item }) => (
-              <Pressable
-                style={styles.previewItem}
-                onPress={() => toggleItem(item.id)}
-              >
-                <ObjectStorageImage
-                  imageUri={item.imageUri}
-                  style={styles.previewImage}
-                  contentFit="cover"
-                />
-                <View
-                  style={[
-                    styles.removeIcon,
-                    { backgroundColor: theme.error },
-                  ]}
-                >
-                  <Feather name="x" size={12} color="white" />
-                </View>
-              </Pressable>
-            )}
+          <TagSelector
+            selectedTags={tags}
+            onTagsChange={setTags}
+            existingTags={existingTags}
+            placeholder="Add a tag..."
           />
         </View>
-      ) : null}
 
-      <View style={styles.itemsSection}>
-        <ThemedText type="caption" style={styles.label}>
-          Choose Items
-        </ThemedText>
-        <CategoryFilter
-          selectedCategory={filterCategory}
-          onSelectCategory={setFilterCategory}
-        />
-        {items.length === 0 ? (
-          <View style={styles.emptyItems}>
-            <ThemedText type="body" style={styles.emptyText}>
-              No items in your wardrobe yet.
-            </ThemedText>
-            <ThemedText type="caption">
-              Add some clothes first to create an outfit.
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredItems}
-            key={numColumns}
-            numColumns={numColumns}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={[
-              styles.itemsGrid,
-              { paddingBottom: insets.bottom + (isEditing ? 100 : 20) },
-            ]}
-            columnWrapperStyle={styles.itemRow}
-            renderItem={renderItem}
-          />
-        )}
-      </View>
+        <View style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            The Outfit
+          </ThemedText>
+          <ThemedText type="caption" style={styles.sectionSubtitle}>
+            Select your core pieces (tops, bottoms, dresses)
+          </ThemedText>
+          {coreItems.length === 0 ? (
+            <View style={styles.emptySection}>
+              <ThemedText type="body" style={styles.emptyText}>
+                No core items in your wardrobe yet.
+              </ThemedText>
+              <ThemedText type="caption">
+                Add tops, bottoms, or dresses to create an outfit.
+              </ThemedText>
+            </View>
+          ) : (
+            groupedCoreItems.map((group) =>
+              renderCategorySection(
+                group.category,
+                group.items,
+                selectedCoreIds,
+                toggleCoreItem
+              )
+            )
+          )}
+        </View>
+
+        <View style={[styles.section, styles.accessorySection]}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Looks Good With
+          </ThemedText>
+          <ThemedText type="caption" style={styles.sectionSubtitle}>
+            Add complementary pieces (outerwear, shoes, accessories)
+          </ThemedText>
+          {accessoryItems.length === 0 ? (
+            <View style={styles.emptySection}>
+              <ThemedText type="body" style={styles.emptyText}>
+                No accessories in your wardrobe yet.
+              </ThemedText>
+              <ThemedText type="caption">
+                Add outerwear, shoes, or accessories to style your outfit.
+              </ThemedText>
+            </View>
+          ) : (
+            groupedAccessoryItems.map((group) =>
+              renderCategorySection(
+                group.category,
+                group.items,
+                selectedAccessoryIds,
+                toggleAccessoryItem
+              )
+            )
+          )}
+        </View>
+      </ScrollView>
 
       {isEditing ? (
         <View
@@ -408,10 +450,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  nameSection: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.lg,
+  },
+  section: {
+    marginBottom: Spacing.xl,
+  },
+  accessorySection: {
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  sectionTitle: {
+    marginBottom: Spacing.xs,
+  },
+  sectionSubtitle: {
+    opacity: 0.7,
+    marginBottom: Spacing.md,
   },
   label: {
     fontWeight: "600",
@@ -423,69 +481,28 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     fontSize: 16,
   },
-  tagsSection: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  tagInputRow: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-  },
-  tagInput: {
-    flex: 1,
-    height: Spacing.inputHeight,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    fontSize: 16,
-  },
-  addTagButton: {
-    width: Spacing.inputHeight,
-    height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  tagsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  previewSection: {
-    paddingHorizontal: Spacing.lg,
+  categorySection: {
     marginBottom: Spacing.md,
   },
-  previewList: {
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
     gap: Spacing.sm,
   },
-  previewItem: {
-    position: "relative",
+  categoryLabel: {
+    opacity: 0.7,
   },
-  previewImage: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.sm,
-  },
-  removeIcon: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
+  countBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    minWidth: 20,
     alignItems: "center",
-  },
-  itemsSection: {
-    flex: 1,
-    paddingTop: Spacing.md,
-  },
-  itemsGrid: {
-    paddingHorizontal: Spacing.lg,
   },
   itemRow: {
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    paddingRight: Spacing.lg,
   },
   itemCard: {
     borderRadius: BorderRadius.sm,
@@ -499,21 +516,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 4,
     right: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  itemName: {
-    padding: Spacing.xs,
-    textAlign: "center",
-  },
-  emptyItems: {
-    flex: 1,
-    justifyContent: "center",
+  emptySection: {
+    paddingVertical: Spacing.xl,
     alignItems: "center",
-    padding: Spacing["3xl"],
   },
   emptyText: {
     marginBottom: Spacing.sm,
