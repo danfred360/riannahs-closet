@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Alert, Pressable, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Alert, Pressable, Platform, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,12 +19,17 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteParams = RouteProp<RootStackParamList, "ItemDetail">;
 
+const MAX_CONTENT_WIDTH = 500;
+const MAX_IMAGE_SIZE = 300;
+
 export default function ItemDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > MAX_CONTENT_WIDTH;
 
   const [item, setItem] = useState<ClothingItem | null>(null);
   const [usedInOutfits, setUsedInOutfits] = useState<Outfit[]>([]);
@@ -129,12 +134,16 @@ export default function ItemDetailScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.xl },
+          { 
+            paddingBottom: insets.bottom + Spacing.xl,
+            alignItems: isWideScreen ? "center" : "stretch",
+          },
         ]}
       >
+        <View style={[styles.contentWrapper, isWideScreen && { maxWidth: MAX_CONTENT_WIDTH, width: "100%" }]}>
         <ObjectStorageImage
           imageUri={item.imageUri}
-          style={styles.image}
+          style={[styles.image, { maxWidth: MAX_IMAGE_SIZE, maxHeight: MAX_IMAGE_SIZE }]}
           contentFit="cover"
           transition={200}
         />
@@ -198,13 +207,14 @@ export default function ItemDetailScreen() {
         <View style={styles.actions}>
           <Pressable
             onPress={handleDelete}
-            style={[
-              styles.deleteButton,
-              { borderColor: theme.error, borderWidth: 1, borderRadius: 24, paddingVertical: 14, alignItems: "center" },
-            ]}
+            style={[styles.deleteButton, { borderColor: theme.error }]}
           >
-            <ThemedText style={{ color: theme.error, fontWeight: "600" }}>Delete Item</ThemedText>
+            <Feather name="trash-2" size={18} color={theme.error} />
+            <ThemedText style={[styles.deleteButtonText, { color: theme.error }]}>
+              Delete Item
+            </ThemedText>
           </Pressable>
+        </View>
         </View>
       </ScrollView>
     </ThemedView>
@@ -223,12 +233,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: Spacing.xl,
   },
+  contentWrapper: {
+    width: "100%",
+  },
   image: {
     width: "100%",
-    maxWidth: 400,
     aspectRatio: 1,
-    backgroundColor: "#f0f0f0",
     alignSelf: "center",
+    borderRadius: BorderRadius.md,
   },
   content: {
     padding: Spacing.lg,
@@ -259,10 +271,19 @@ const styles = StyleSheet.create({
   },
   actions: {
     padding: Spacing.lg,
-    paddingTop: 0,
+    paddingTop: Spacing.lg,
   },
   deleteButton: {
-    borderColor: "red",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  deleteButtonText: {
+    fontWeight: "600",
   },
   outfitsSection: {
     marginTop: Spacing.lg,
