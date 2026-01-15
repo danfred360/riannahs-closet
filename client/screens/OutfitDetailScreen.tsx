@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform, Alert } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Alert, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -90,29 +90,45 @@ export default function OutfitDetailScreen() {
 
   const outfitItems = items.filter((item) => outfit?.itemIds.includes(item.id));
 
+  const performDelete = async () => {
+    try {
+      await deleteOutfit(route.params.outfitId);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error deleting outfit:", error);
+      if (Platform.OS === "web") {
+        alert("Failed to delete outfit. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to delete outfit. Please try again.");
+      }
+    }
+  };
+
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Outfit",
-      `Are you sure you want to delete "${outfit?.name}"? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteOutfit(route.params.outfitId);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Error deleting outfit:", error);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", "Failed to delete outfit. Please try again.");
-            }
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${outfit?.name}"? This cannot be undone.`
+      );
+      if (confirmed) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Outfit",
+        `Are you sure you want to delete "${outfit?.name}"? This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: performDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const displayedWearHistory = showAllWearHistory
