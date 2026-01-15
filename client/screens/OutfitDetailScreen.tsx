@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
@@ -21,12 +22,18 @@ type RouteParams = RouteProp<RootStackParamList, "OutfitDetail">;
 
 const INITIAL_WEAR_HISTORY_COUNT = 3;
 
+const ITEM_IMAGE_SIZE = 120;
+const MAX_CONTENT_WIDTH = 500;
+
 export default function OutfitDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > MAX_CONTENT_WIDTH;
 
   const [outfit, setOutfit] = useState<Outfit | null>(null);
   const [items, setItems] = useState<ClothingItem[]>([]);
@@ -93,6 +100,7 @@ export default function OutfitDetailScreen() {
   const performDelete = async () => {
     try {
       await deleteOutfit(route.params.outfitId);
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/outfits"] });
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -152,20 +160,25 @@ export default function OutfitDetailScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: headerHeight + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
+          { 
+            paddingTop: headerHeight + Spacing.md, 
+            paddingBottom: insets.bottom + Spacing.xl,
+            alignItems: isWideScreen ? "center" : "stretch",
+          },
         ]}
       >
+        <View style={[styles.contentWrapper, isWideScreen && { maxWidth: MAX_CONTENT_WIDTH, width: "100%" }]}>
         <View style={styles.itemsGrid}>
           {outfitItems.map((item) => (
             <Pressable
               key={item.id}
-              style={styles.itemCard}
+              style={[styles.itemCard, { width: ITEM_IMAGE_SIZE }]}
               onPress={() => navigation.navigate("ItemDetail", { itemId: item.id })}
             >
               <ObjectStorageImage
                 imageUri={item.imageUri}
-                style={styles.itemImage}
-                contentFit="contain"
+                style={[styles.itemImage, { width: ITEM_IMAGE_SIZE, height: ITEM_IMAGE_SIZE }]}
+                contentFit="cover"
                 transition={200}
               />
               <ThemedText type="small" numberOfLines={1} style={styles.itemName}>
@@ -267,6 +280,7 @@ export default function OutfitDetailScreen() {
             </ThemedText>
           </Pressable>
         </View>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -283,6 +297,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
   },
+  contentWrapper: {
+    width: "100%",
+  },
   itemsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -291,15 +308,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   itemCard: {
-    width: 150,
     borderRadius: BorderRadius.md,
     overflow: "hidden",
-    backgroundColor: "#f0f0f0",
   },
   itemImage: {
-    width: "100%",
-    aspectRatio: 1,
-    backgroundColor: "#f0f0f0",
+    borderRadius: BorderRadius.md,
   },
   itemName: {
     padding: Spacing.xs,

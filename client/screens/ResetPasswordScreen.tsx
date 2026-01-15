@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TextInput,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -24,9 +25,13 @@ type RootStackParamList = {
 
 type Props = NativeStackScreenProps<RootStackParamList, "ResetPassword">;
 
+const MAX_FORM_WIDTH = 400;
+
 export default function ResetPasswordScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWideScreen = windowWidth > 600;
   const { email } = route.params;
 
   const [code, setCode] = useState("");
@@ -92,9 +97,14 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
       style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
       contentContainerStyle={[
         styles.container,
-        { paddingTop: insets.top + Spacing["3xl"], paddingBottom: insets.bottom + Spacing.xl },
+        { 
+          paddingTop: insets.top + Spacing["3xl"], 
+          paddingBottom: insets.bottom + Spacing.xl,
+          alignItems: isWideScreen ? "center" : "stretch",
+        },
       ]}
     >
+      <View style={[styles.contentWrapper, isWideScreen && { maxWidth: MAX_FORM_WIDTH, width: "100%" }]}>
       <View style={styles.header}>
         <Image
           source={require("../../assets/images/icon.png")}
@@ -223,7 +233,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
           </>
         )}
       </View>
-
+      </View>
     </KeyboardAwareScrollViewCompat>
   );
 }
@@ -232,6 +242,9 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
+  },
+  contentWrapper: {
+    width: "100%",
   },
   header: {
     alignItems: "center",
