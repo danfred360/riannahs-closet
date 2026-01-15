@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -44,6 +44,10 @@ export default function AuthScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const displayNameRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     setError("");
@@ -146,6 +150,15 @@ export default function AuthScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
+            returnKeyType={isLogin ? "next" : "next"}
+            onSubmitEditing={() => {
+              if (isLogin) {
+                passwordRef.current?.focus();
+              } else {
+                displayNameRef.current?.focus();
+              }
+            }}
+            blurOnSubmit={false}
             testID="input-email"
           />
         </View>
@@ -156,6 +169,7 @@ export default function AuthScreen() {
               Display Name (optional)
             </ThemedText>
             <TextInput
+              ref={displayNameRef}
               style={[
                 styles.input,
                 {
@@ -169,6 +183,9 @@ export default function AuthScreen() {
               placeholder="How should we call you?"
               placeholderTextColor={theme.textSecondary}
               autoCorrect={false}
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              blurOnSubmit={false}
               testID="input-display-name"
             />
           </View>
@@ -179,6 +196,7 @@ export default function AuthScreen() {
             Password
           </ThemedText>
           <TextInput
+            ref={passwordRef}
             style={[
               styles.input,
               {
@@ -192,6 +210,15 @@ export default function AuthScreen() {
             placeholder="Enter your password"
             placeholderTextColor={theme.textSecondary}
             secureTextEntry
+            returnKeyType={isLogin ? "done" : "next"}
+            onSubmitEditing={() => {
+              if (isLogin) {
+                handleSubmit();
+              } else {
+                confirmPasswordRef.current?.focus();
+              }
+            }}
+            blurOnSubmit={isLogin}
             testID="input-password"
           />
         </View>
@@ -202,6 +229,7 @@ export default function AuthScreen() {
               Confirm Password
             </ThemedText>
             <TextInput
+              ref={confirmPasswordRef}
               style={[
                 styles.input,
                 {
@@ -215,6 +243,8 @@ export default function AuthScreen() {
               placeholder="Confirm your password"
               placeholderTextColor={theme.textSecondary}
               secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
               testID="input-confirm-password"
             />
           </View>

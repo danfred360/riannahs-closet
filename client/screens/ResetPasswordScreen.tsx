@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -40,6 +40,9 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const newPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     setError("");
@@ -158,6 +161,9 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholderTextColor={theme.textSecondary}
                 keyboardType="number-pad"
                 maxLength={6}
+                returnKeyType="next"
+                onSubmitEditing={() => newPasswordRef.current?.focus()}
+                blurOnSubmit={false}
                 testID="input-code"
               />
             </View>
@@ -167,6 +173,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 New Password
               </ThemedText>
               <TextInput
+                ref={newPasswordRef}
                 style={[
                   styles.input,
                   {
@@ -180,6 +187,9 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholder="Enter new password"
                 placeholderTextColor={theme.textSecondary}
                 secureTextEntry
+                returnKeyType="next"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                blurOnSubmit={false}
                 testID="input-new-password"
               />
             </View>
@@ -189,6 +199,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 Confirm Password
               </ThemedText>
               <TextInput
+                ref={confirmPasswordRef}
                 style={[
                   styles.input,
                   {
@@ -202,6 +213,8 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholder="Confirm new password"
                 placeholderTextColor={theme.textSecondary}
                 secureTextEntry
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
                 testID="input-confirm-password"
               />
             </View>
