@@ -20,10 +20,16 @@ export interface Outfit {
   id: string;
   name: string;
   itemIds: string[];
+  accessoryIds: string[];
   tags: string[];
   createdAt: string;
   updatedAt: string;
 }
+
+export const CORE_CATEGORIES: ClothingCategory[] = ["tops", "bottoms", "dresses"];
+export const ACCESSORY_CATEGORIES: ClothingCategory[] = ["outerwear", "shoes", "accessories"];
+
+export const DEFAULT_TAGS = ["summer", "winter", "spring", "fall"];
 
 export interface PlannedOutfit {
   id: string;

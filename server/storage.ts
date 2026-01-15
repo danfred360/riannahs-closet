@@ -39,10 +39,10 @@ export interface IStorage {
   updateClothingItem(userId: string, itemId: string, item: Partial<InsertClothingItem>): Promise<ClothingItem | undefined>;
   deleteClothingItem(userId: string, itemId: string): Promise<boolean>;
   
-  getOutfits(userId: string): Promise<(Outfit & { itemIds: string[] })[]>;
-  getOutfit(userId: string, outfitId: string): Promise<(Outfit & { itemIds: string[] }) | undefined>;
-  createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[] }>;
-  updateOutfit(userId: string, outfitId: string, outfit: Partial<InsertOutfit>): Promise<(Outfit & { itemIds: string[] }) | undefined>;
+  getOutfits(userId: string): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] })[]>;
+  getOutfit(userId: string, outfitId: string): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] }) | undefined>;
+  createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[]; accessoryIds: string[] }>;
+  updateOutfit(userId: string, outfitId: string, outfit: Partial<InsertOutfit>): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] }) | undefined>;
   deleteOutfit(userId: string, outfitId: string): Promise<boolean>;
   
   getPlannedOutfits(userId: string): Promise<PlannedOutfit[]>;
@@ -168,20 +168,22 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async getOutfits(userId: string): Promise<(Outfit & { itemIds: string[] })[]> {
+  async getOutfits(userId: string): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] })[]> {
     const outfitsList = await db.select().from(outfits).where(eq(outfits.userId, userId));
     
     const outfitsWithItems = await Promise.all(
       outfitsList.map(async (outfit) => {
         const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, outfit.id));
-        return { ...outfit, itemIds: items.map((i) => i.clothingItemId) };
+        const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
+        const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
+        return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems };
       })
     );
     
     return outfitsWithItems;
   }
 
-  async getOutfit(userId: string, outfitId: string): Promise<(Outfit & { itemIds: string[] }) | undefined> {
+  async getOutfit(userId: string, outfitId: string): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] }) | undefined> {
     const [outfit] = await db
       .select()
       .from(outfits)
@@ -190,31 +192,46 @@ export class DatabaseStorage implements IStorage {
     if (!outfit) return undefined;
     
     const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, outfit.id));
-    return { ...outfit, itemIds: items.map((i) => i.clothingItemId) };
+    const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
+    const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
+    return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems };
   }
 
-  async createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[] }> {
-    const { itemIds, ...outfitData } = outfit;
+  async createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[]; accessoryIds: string[] }> {
+    const { itemIds, accessoryIds, ...outfitData } = outfit;
     
     const [created] = await db
       .insert(outfits)
       .values({ ...outfitData, userId })
       .returning();
     
+    const allItems: { outfitId: string; clothingItemId: string; itemType: "core" | "accessory" }[] = [];
+    
     if (itemIds && itemIds.length > 0) {
-      await db.insert(outfitItems).values(
-        itemIds.map((clothingItemId) => ({
-          outfitId: created.id,
-          clothingItemId,
-        }))
-      );
+      allItems.push(...itemIds.map((clothingItemId) => ({
+        outfitId: created.id,
+        clothingItemId,
+        itemType: "core" as const,
+      })));
     }
     
-    return { ...created, itemIds: itemIds || [] };
+    if (accessoryIds && accessoryIds.length > 0) {
+      allItems.push(...accessoryIds.map((clothingItemId) => ({
+        outfitId: created.id,
+        clothingItemId,
+        itemType: "accessory" as const,
+      })));
+    }
+    
+    if (allItems.length > 0) {
+      await db.insert(outfitItems).values(allItems);
+    }
+    
+    return { ...created, itemIds: itemIds || [], accessoryIds: accessoryIds || [] };
   }
 
-  async updateOutfit(userId: string, outfitId: string, outfit: Partial<InsertOutfit>): Promise<(Outfit & { itemIds: string[] }) | undefined> {
-    const { itemIds, ...outfitData } = outfit;
+  async updateOutfit(userId: string, outfitId: string, outfit: Partial<InsertOutfit>): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] }) | undefined> {
+    const { itemIds, accessoryIds, ...outfitData } = outfit;
     
     const [updated] = await db
       .update(outfits)
@@ -224,20 +241,36 @@ export class DatabaseStorage implements IStorage {
     
     if (!updated) return undefined;
     
-    if (itemIds !== undefined) {
+    if (itemIds !== undefined || accessoryIds !== undefined) {
       await db.delete(outfitItems).where(eq(outfitItems.outfitId, outfitId));
-      if (itemIds.length > 0) {
-        await db.insert(outfitItems).values(
-          itemIds.map((clothingItemId) => ({
-            outfitId: updated.id,
-            clothingItemId,
-          }))
-        );
+      
+      const allItems: { outfitId: string; clothingItemId: string; itemType: "core" | "accessory" }[] = [];
+      
+      if (itemIds && itemIds.length > 0) {
+        allItems.push(...itemIds.map((clothingItemId) => ({
+          outfitId: updated.id,
+          clothingItemId,
+          itemType: "core" as const,
+        })));
+      }
+      
+      if (accessoryIds && accessoryIds.length > 0) {
+        allItems.push(...accessoryIds.map((clothingItemId) => ({
+          outfitId: updated.id,
+          clothingItemId,
+          itemType: "accessory" as const,
+        })));
+      }
+      
+      if (allItems.length > 0) {
+        await db.insert(outfitItems).values(allItems);
       }
     }
     
     const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, updated.id));
-    return { ...updated, itemIds: items.map((i) => i.clothingItemId) };
+    const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
+    const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
+    return { ...updated, itemIds: coreItems, accessoryIds: accessoryItems };
   }
 
   async deleteOutfit(userId: string, outfitId: string): Promise<boolean> {

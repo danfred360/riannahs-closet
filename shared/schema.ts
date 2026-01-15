@@ -169,6 +169,7 @@ export const insertOutfitSchema = createInsertSchema(outfits).omit({
   updatedAt: true,
 }).extend({
   itemIds: z.array(z.string()),
+  accessoryIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
 });
 
