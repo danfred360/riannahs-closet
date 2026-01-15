@@ -12,6 +12,11 @@ export const clothingCategoryEnum = pgEnum("clothing_category", [
   "accessories",
 ]);
 
+export const outfitItemTypeEnum = pgEnum("outfit_item_type", [
+  "core",
+  "accessory",
+]);
+
 export const users = pgTable("users", {
   id: varchar("id")
     .primaryKey()
@@ -74,6 +79,7 @@ export const outfitItems = pgTable("outfit_items", {
   clothingItemId: varchar("clothing_item_id")
     .notNull()
     .references(() => clothingItems.id, { onDelete: "cascade" }),
+  itemType: outfitItemTypeEnum("item_type").notNull().default("core"),
 });
 
 export const plannedOutfits = pgTable("planned_outfits", {
