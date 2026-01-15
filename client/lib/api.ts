@@ -112,6 +112,7 @@ export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
     body: JSON.stringify({
       name: outfit.name,
       itemIds: outfit.itemIds,
+      accessoryIds: outfit.accessoryIds,
       tags: outfit.tags,
     }),
   });
