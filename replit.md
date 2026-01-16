@@ -45,17 +45,26 @@ Preferred communication style: Simple, everyday language.
    - Cache automatically invalidated on create/update/delete operations
    - Cache cleared on logout for security
 
-2. **File-based navigation structure**: Each tab has its own stack navigator
+2. **Offline-first sync queue**: Changes sync in the background with automatic retries
+   - Implementation in `client/lib/sync-queue.ts`
+   - Supported operations: `create_item`, `update_item`, `delete_item`, `create_outfit`, `update_outfit`, `delete_outfit`, `create_planned_outfit`, `delete_planned_outfit`
+   - Uses temp IDs for optimistic updates (prefix: `temp_`)
+   - Temp ID mapping system for planned outfits referencing temp outfit IDs
+   - Max 3 retries with 5-second delay between attempts
+   - `useSyncStatus` hook provides separate counts for items vs outfits
+   - `SyncStatusIndicator` component displays "Syncing X items, Y outfits..."
+
+3. **File-based navigation structure**: Each tab has its own stack navigator
    - Pattern: `client/navigation/[Feature]StackNavigator.tsx`
    - Enables deep linking and proper back navigation
 
-3. **Path aliases**: `@/` maps to `client/`, `@shared/` maps to `shared/`
+4. **Path aliases**: `@/` maps to `client/`, `@shared/` maps to `shared/`
    - Configured in babel.config.js and tsconfig.json
 
-4. **Shared types**: Core domain types (ClothingItem, Outfit, etc.) defined in `client/lib/types.ts`
+5. **Shared types**: Core domain types (ClothingItem, Outfit, etc.) defined in `client/lib/types.ts`
    - Database schema in `shared/schema.ts` uses Drizzle ORM with Zod validation
 
-5. **API versioning**: All API endpoints are prefixed with `/api/v1/`
+6. **API versioning**: All API endpoints are prefixed with `/api/v1/`
    - **STATUS: v1 ENDPOINTS ARE NOW LOCKED** - Do not make breaking changes to v1 endpoints
    - Rationale: Ensures backward compatibility when mobile app is in App Store review
    - Pattern: Server routes and client API calls all use versioned paths
