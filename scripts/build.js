@@ -532,17 +532,24 @@ async function buildWebBundle() {
 
 async function main() {
   // Check if we should skip mobile bundles (for faster publish)
-  // Auto-detect Cloud Run deployments via REPLIT_DEPLOYMENT env var
-  const isDeployment = process.env.REPLIT_DEPLOYMENT === "1";
+  // Auto-detect Cloud Run deployments via various env vars
+  const isDeployment = process.env.REPLIT_DEPLOYMENT === "1" ||
+                       process.env.REPLIT_INTERNAL_APP_DOMAIN !== undefined ||
+                       process.env.NODE_ENV === "production";
   const webOnly = process.env.WEB_ONLY === "true" || 
                   process.argv.includes("--web-only") ||
                   isDeployment;
   
+  console.log("Build environment:", {
+    REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT,
+    REPLIT_INTERNAL_APP_DOMAIN: process.env.REPLIT_INTERNAL_APP_DOMAIN ? "set" : "not set",
+    NODE_ENV: process.env.NODE_ENV,
+    isDeployment,
+    webOnly
+  });
+  
   if (webOnly) {
-    console.log("Building web bundle only (skipping mobile bundles)...");
-    if (isDeployment) {
-      console.log("(Auto-detected Cloud Run deployment - mobile bundles not needed)");
-    }
+    console.log("Building web bundle only (skipping mobile bundles for faster deployment)...");
     setupSignalHandlers();
     await buildWebBundle();
     console.log("Web build complete!");
