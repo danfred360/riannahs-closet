@@ -98,10 +98,49 @@ export const plannedOutfits = pgTable("planned_outfits", {
   date: text("date").notNull(),
 });
 
+// Normalized tags table
+export const tags = pgTable("tags", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Junction table for clothing item tags
+export const clothingItemTags = pgTable("clothing_item_tags", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  clothingItemId: varchar("clothing_item_id")
+    .notNull()
+    .references(() => clothingItems.id, { onDelete: "cascade" }),
+  tagId: varchar("tag_id")
+    .notNull()
+    .references(() => tags.id, { onDelete: "cascade" }),
+});
+
+// Junction table for outfit tags
+export const outfitTags = pgTable("outfit_tags", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  outfitId: varchar("outfit_id")
+    .notNull()
+    .references(() => outfits.id, { onDelete: "cascade" }),
+  tagId: varchar("tag_id")
+    .notNull()
+    .references(() => tags.id, { onDelete: "cascade" }),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   clothingItems: many(clothingItems),
   outfits: many(outfits),
   plannedOutfits: many(plannedOutfits),
+  tags: many(tags),
 }));
 
 export const clothingItemsRelations = relations(clothingItems, ({ one, many }) => ({
@@ -110,6 +149,7 @@ export const clothingItemsRelations = relations(clothingItems, ({ one, many }) =
     references: [users.id],
   }),
   outfitItems: many(outfitItems),
+  clothingItemTags: many(clothingItemTags),
 }));
 
 export const outfitsRelations = relations(outfits, ({ one, many }) => ({
@@ -119,6 +159,7 @@ export const outfitsRelations = relations(outfits, ({ one, many }) => ({
   }),
   outfitItems: many(outfitItems),
   plannedOutfits: many(plannedOutfits),
+  outfitTags: many(outfitTags),
 }));
 
 export const outfitItemsRelations = relations(outfitItems, ({ one }) => ({
@@ -140,6 +181,37 @@ export const plannedOutfitsRelations = relations(plannedOutfits, ({ one }) => ({
   outfit: one(outfits, {
     fields: [plannedOutfits.outfitId],
     references: [outfits.id],
+  }),
+}));
+
+export const tagsRelations = relations(tags, ({ one, many }) => ({
+  user: one(users, {
+    fields: [tags.userId],
+    references: [users.id],
+  }),
+  clothingItemTags: many(clothingItemTags),
+  outfitTags: many(outfitTags),
+}));
+
+export const clothingItemTagsRelations = relations(clothingItemTags, ({ one }) => ({
+  clothingItem: one(clothingItems, {
+    fields: [clothingItemTags.clothingItemId],
+    references: [clothingItems.id],
+  }),
+  tag: one(tags, {
+    fields: [clothingItemTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const outfitTagsRelations = relations(outfitTags, ({ one }) => ({
+  outfit: one(outfits, {
+    fields: [outfitTags.outfitId],
+    references: [outfits.id],
+  }),
+  tag: one(tags, {
+    fields: [outfitTags.tagId],
+    references: [tags.id],
   }),
 }));
 
@@ -191,3 +263,6 @@ export type InsertOutfit = z.infer<typeof insertOutfitSchema>;
 export type PlannedOutfit = typeof plannedOutfits.$inferSelect;
 export type InsertPlannedOutfit = z.infer<typeof insertPlannedOutfitSchema>;
 export type OutfitItem = typeof outfitItems.$inferSelect;
+export type Tag = typeof tags.$inferSelect;
+export type ClothingItemTag = typeof clothingItemTags.$inferSelect;
+export type OutfitTag = typeof outfitTags.$inferSelect;
