@@ -477,12 +477,6 @@ export default function ProfileScreen() {
         </Card>
       </View>
 
-      <Image
-        source={require("@/assets/images/botanical-divider.png")}
-        style={styles.divider}
-        contentFit="contain"
-      />
-
       <ThemedText type="small" style={styles.versionText}>
         Version 1.0.0
       </ThemedText>
@@ -574,12 +568,6 @@ const styles = StyleSheet.create({
   },
   tipText: {
     flex: 1,
-  },
-  divider: {
-    width: "100%",
-    height: 40,
-    marginVertical: Spacing.xl,
-    opacity: 0.4,
   },
   versionText: {
     textAlign: "center",
