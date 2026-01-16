@@ -158,6 +158,7 @@ export default function AuthScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
+            textContentType="emailAddress"
             keyboardType="email-address"
             returnKeyType={isLogin ? "next" : "next"}
             onSubmitEditing={() => {
@@ -225,6 +226,7 @@ export default function AuthScreen() {
             placeholderTextColor={theme.textSecondary}
             secureTextEntry
             autoComplete={isLogin ? "current-password" : "new-password"}
+            textContentType={isLogin ? "password" : "newPassword"}
             returnKeyType={isLogin ? "done" : "next"}
             onSubmitEditing={() => {
               if (isLogin) {
@@ -264,6 +266,7 @@ export default function AuthScreen() {
               placeholderTextColor={theme.textSecondary}
               secureTextEntry
               autoComplete="new-password"
+              textContentType="newPassword"
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
               testID="input-confirm-password"

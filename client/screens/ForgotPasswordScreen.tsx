@@ -144,6 +144,8 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
                 placeholder="Enter your email address"
                 placeholderTextColor={theme.textSecondary}
                 autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
                 autoCorrect={false}
                 keyboardType="email-address"
                 returnKeyType="done"

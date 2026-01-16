@@ -170,6 +170,36 @@ eas update --branch preview --message "Testing new feature"
 - `users.email` - Required unique email field for authentication
 - `password_reset_tokens` - Stores reset tokens with user_id, token, expires_at
 
+## iOS Password AutoFill
+
+### Configuration
+The app supports iOS password autofill/save features through:
+
+1. **TextInput props**: All auth screens use `textContentType` for iOS autofill:
+   - Email fields: `textContentType="emailAddress"`
+   - Login password: `textContentType="password"`
+   - New password fields: `textContentType="newPassword"`
+
+2. **Associated Domains**: Configured in `app.json`:
+   ```json
+   "associatedDomains": ["webcredentials:riannahscloset.com"]
+   ```
+
+3. **Apple App Site Association file**: Served at `/.well-known/apple-app-site-association`
+   - Location: `server/public/.well-known/apple-app-site-association`
+   - Must be accessible at `https://riannahscloset.com/.well-known/apple-app-site-association`
+
+### Setup After Apple Developer Enrollment
+1. Get your Team ID from Apple Developer portal (10-character ID like `ABCD1234EF`)
+2. Update the AASA file: Replace `XXXXXXXXXX` with your actual Team ID
+   - Format: `{TEAM_ID}.{BUNDLE_ID}` → `ABCD1234EF.com.riannahscloset.app`
+3. Rebuild the app with `eas build` (associated domains require a native build)
+
+### Testing
+- Password suggestions appear when creating new accounts
+- Saved passwords offer to autofill on login screen
+- Passwords sync via iCloud Keychain across user's devices
+
 ## Account Deletion
 
 ### How It Works

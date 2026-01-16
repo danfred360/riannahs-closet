@@ -257,6 +257,18 @@ function configureExpoAndLanding(app: express.Application) {
     next();
   });
 
+  // Serve .well-known directory for Apple App Site Association
+  app.use("/.well-known", express.static(
+    path.resolve(process.cwd(), "server", "public", ".well-known"),
+    {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith("apple-app-site-association")) {
+          res.setHeader("Content-Type", "application/json");
+        }
+      }
+    }
+  ));
+
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
   

@@ -187,6 +187,8 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholder="Enter new password"
                 placeholderTextColor={theme.textSecondary}
                 secureTextEntry
+                autoComplete="new-password"
+                textContentType="newPassword"
                 returnKeyType="next"
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 blurOnSubmit={false}
@@ -213,6 +215,8 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
                 placeholder="Confirm new password"
                 placeholderTextColor={theme.textSecondary}
                 secureTextEntry
+                autoComplete="new-password"
+                textContentType="newPassword"
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
                 testID="input-confirm-password"
