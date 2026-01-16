@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, notInArray, sql, gt, lt } from "drizzle-orm";
+import { eq, and, notInArray, sql, gt, lt, inArray } from "drizzle-orm";
 import {
   users,
   clothingItems,
@@ -7,6 +7,9 @@ import {
   outfitItems,
   plannedOutfits,
   passwordResetTokens,
+  tags,
+  clothingItemTags,
+  outfitTags,
   type User,
   type InsertUser,
   type ClothingItem,
@@ -57,6 +60,97 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  
+  private async getOrCreateTags(userId: string, tagNames: string[]): Promise<string[]> {
+    if (!tagNames || tagNames.length === 0) return [];
+    
+    const tagIds: string[] = [];
+    
+    for (const name of tagNames) {
+      const normalizedName = name.trim().toLowerCase();
+      if (!normalizedName) continue;
+      
+      const [existing] = await db
+        .select()
+        .from(tags)
+        .where(and(eq(tags.userId, userId), eq(tags.name, normalizedName)));
+      
+      if (existing) {
+        tagIds.push(existing.id);
+      } else {
+        const [created] = await db
+          .insert(tags)
+          .values({ userId, name: normalizedName })
+          .returning();
+        tagIds.push(created.id);
+      }
+    }
+    
+    return tagIds;
+  }
+
+  private async getTagNamesForItem(itemId: string): Promise<string[]> {
+    const itemTagRows = await db
+      .select({ tagId: clothingItemTags.tagId })
+      .from(clothingItemTags)
+      .where(eq(clothingItemTags.clothingItemId, itemId));
+    
+    if (itemTagRows.length === 0) return [];
+    
+    const tagIds = itemTagRows.map(r => r.tagId);
+    const tagRows = await db
+      .select({ name: tags.name })
+      .from(tags)
+      .where(inArray(tags.id, tagIds));
+    
+    return tagRows.map(t => t.name);
+  }
+
+  private async getTagNamesForOutfit(outfitId: string): Promise<string[]> {
+    const outfitTagRows = await db
+      .select({ tagId: outfitTags.tagId })
+      .from(outfitTags)
+      .where(eq(outfitTags.outfitId, outfitId));
+    
+    if (outfitTagRows.length === 0) return [];
+    
+    const tagIds = outfitTagRows.map(r => r.tagId);
+    const tagRows = await db
+      .select({ name: tags.name })
+      .from(tags)
+      .where(inArray(tags.id, tagIds));
+    
+    return tagRows.map(t => t.name);
+  }
+
+  private async setItemTags(userId: string, itemId: string, tagNames: string[]): Promise<void> {
+    await db.delete(clothingItemTags).where(eq(clothingItemTags.clothingItemId, itemId));
+    
+    if (!tagNames || tagNames.length === 0) return;
+    
+    const tagIds = await this.getOrCreateTags(userId, tagNames);
+    
+    if (tagIds.length > 0) {
+      await db.insert(clothingItemTags).values(
+        tagIds.map(tagId => ({ clothingItemId: itemId, tagId }))
+      );
+    }
+  }
+
+  private async setOutfitTags(userId: string, outfitId: string, tagNames: string[]): Promise<void> {
+    await db.delete(outfitTags).where(eq(outfitTags.outfitId, outfitId));
+    
+    if (!tagNames || tagNames.length === 0) return;
+    
+    const tagIds = await this.getOrCreateTags(userId, tagNames);
+    
+    if (tagIds.length > 0) {
+      await db.insert(outfitTags).values(
+        tagIds.map(tagId => ({ outfitId, tagId }))
+      );
+    }
+  }
+
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -122,7 +216,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClothingItems(userId: string): Promise<ClothingItem[]> {
-    return db.select().from(clothingItems).where(eq(clothingItems.userId, userId));
+    const items = await db.select().from(clothingItems).where(eq(clothingItems.userId, userId));
+    
+    const itemsWithTags = await Promise.all(
+      items.map(async (item) => {
+        const tagNames = await this.getTagNamesForItem(item.id);
+        return { ...item, tags: tagNames };
+      })
+    );
+    
+    return itemsWithTags;
   }
 
   async getClothingItem(userId: string, itemId: string): Promise<ClothingItem | undefined> {
@@ -130,24 +233,46 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(clothingItems)
       .where(and(eq(clothingItems.id, itemId), eq(clothingItems.userId, userId)));
-    return item;
+    
+    if (!item) return undefined;
+    
+    const tagNames = await this.getTagNamesForItem(item.id);
+    return { ...item, tags: tagNames };
   }
 
   async createClothingItem(userId: string, item: InsertClothingItem): Promise<ClothingItem> {
+    const { tags: tagNames, ...itemData } = item;
+    
     const [created] = await db
       .insert(clothingItems)
-      .values({ ...item, userId })
+      .values({ ...itemData, userId, tags: [] })
       .returning();
-    return created;
+    
+    if (tagNames && tagNames.length > 0) {
+      await this.setItemTags(userId, created.id, tagNames);
+    }
+    
+    const resolvedTags = await this.getTagNamesForItem(created.id);
+    return { ...created, tags: resolvedTags };
   }
 
   async updateClothingItem(userId: string, itemId: string, item: Partial<InsertClothingItem>): Promise<ClothingItem | undefined> {
+    const { tags: tagNames, ...itemData } = item;
+    
     const [updated] = await db
       .update(clothingItems)
-      .set({ ...item, updatedAt: new Date() })
+      .set({ ...itemData, updatedAt: new Date() })
       .where(and(eq(clothingItems.id, itemId), eq(clothingItems.userId, userId)))
       .returning();
-    return updated;
+    
+    if (!updated) return undefined;
+    
+    if (tagNames !== undefined) {
+      await this.setItemTags(userId, itemId, tagNames || []);
+    }
+    
+    const resolvedTags = await this.getTagNamesForItem(updated.id);
+    return { ...updated, tags: resolvedTags };
   }
 
   async deleteClothingItem(userId: string, itemId: string): Promise<boolean> {
@@ -180,7 +305,8 @@ export class DatabaseStorage implements IStorage {
         const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, outfit.id));
         const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
         const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
-        return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems };
+        const tagNames = await this.getTagNamesForOutfit(outfit.id);
+        return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems, tags: tagNames };
       })
     );
     
@@ -198,15 +324,16 @@ export class DatabaseStorage implements IStorage {
     const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, outfit.id));
     const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
     const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
-    return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems };
+    const tagNames = await this.getTagNamesForOutfit(outfit.id);
+    return { ...outfit, itemIds: coreItems, accessoryIds: accessoryItems, tags: tagNames };
   }
 
   async createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[]; accessoryIds: string[] }> {
-    const { itemIds, accessoryIds, ...outfitData } = outfit;
+    const { itemIds, accessoryIds, tags: tagNames, ...outfitData } = outfit;
     
     const [created] = await db
       .insert(outfits)
-      .values({ ...outfitData, userId })
+      .values({ ...outfitData, userId, tags: [] })
       .returning();
     
     const allItems: { outfitId: string; clothingItemId: string; itemType: "core" | "accessory" }[] = [];
@@ -231,11 +358,16 @@ export class DatabaseStorage implements IStorage {
       await db.insert(outfitItems).values(allItems);
     }
     
-    return { ...created, itemIds: itemIds || [], accessoryIds: accessoryIds || [] };
+    if (tagNames && tagNames.length > 0) {
+      await this.setOutfitTags(userId, created.id, tagNames);
+    }
+    
+    const resolvedTags = await this.getTagNamesForOutfit(created.id);
+    return { ...created, itemIds: itemIds || [], accessoryIds: accessoryIds || [], tags: resolvedTags };
   }
 
   async updateOutfit(userId: string, outfitId: string, outfit: Partial<InsertOutfit>): Promise<(Outfit & { itemIds: string[]; accessoryIds: string[] }) | undefined> {
-    const { itemIds, accessoryIds, ...outfitData } = outfit;
+    const { itemIds, accessoryIds, tags: tagNames, ...outfitData } = outfit;
     
     const [updated] = await db
       .update(outfits)
@@ -271,10 +403,15 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    if (tagNames !== undefined) {
+      await this.setOutfitTags(userId, outfitId, tagNames);
+    }
+    
     const items = await db.select().from(outfitItems).where(eq(outfitItems.outfitId, updated.id));
     const coreItems = items.filter((i) => i.itemType === "core").map((i) => i.clothingItemId);
     const accessoryItems = items.filter((i) => i.itemType === "accessory").map((i) => i.clothingItemId);
-    return { ...updated, itemIds: coreItems, accessoryIds: accessoryItems };
+    const resolvedTags = await this.getTagNamesForOutfit(updated.id);
+    return { ...updated, itemIds: coreItems, accessoryIds: accessoryItems, tags: resolvedTags };
   }
 
   async deleteOutfit(userId: string, outfitId: string): Promise<boolean> {
