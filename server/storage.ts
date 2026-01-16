@@ -51,7 +51,7 @@ export interface IStorage {
   
   deleteUser(userId: string): Promise<boolean>;
   
-  getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null } | undefined>;
+  getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null; email: string } | undefined>;
   markWelcomeSeen(userId: string): Promise<void>;
   updateLoveMessageLastSeen(userId: string, date: string): Promise<void>;
 }

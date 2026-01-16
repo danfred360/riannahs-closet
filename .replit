@@ -82,5 +82,8 @@ ensurePreviewReachable = "/status"
 WEB_ONLY = "true"
 OBJECT_STORAGE_BUCKET_ID = "replit-objstore-d4171db4-6ced-4be2-98db-a3cdb2f7a268"
 
+[userenv.shared]
+SPECIAL_POPUP_EMAIL = "riannah.arlene@gmail.com"
+
 [objectStorage]
 defaultBucketID = "replit-objstore-d4171db4-6ced-4be2-98db-a3cdb2f7a268"
