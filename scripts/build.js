@@ -105,7 +105,7 @@ async function checkMetroHealth() {
   }
 }
 
-async function startMetro(expoPublicDomain) {
+async function startMetro(expoPublicDomain, apiDomain) {
   const isRunning = await checkMetroHealth();
   if (isRunning) {
     console.log("Metro already running");
@@ -114,9 +114,11 @@ async function startMetro(expoPublicDomain) {
 
   console.log("Starting Metro...");
   console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
+  console.log(`Setting EXPO_PUBLIC_API_DOMAIN=${apiDomain}`);
   const env = {
     ...process.env,
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
+    EXPO_PUBLIC_API_DOMAIN: apiDomain,
   };
   metroProcess = spawn("npm", ["run", "expo:start:static:build"], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -550,11 +552,15 @@ async function main() {
   const domain = getDeploymentDomain();
   const baseUrl = `https://${domain}`;
   const timestamp = `${Date.now()}-${process.pid}`;
+  
+  // API domain is the custom domain for API requests
+  // This ensures mobile bundles use the correct API URL
+  const apiDomain = process.env.EXPO_PUBLIC_API_DOMAIN || "riannahscloset.com";
 
   prepareDirectories(timestamp);
   clearMetroCache();
 
-  await startMetro(domain);
+  await startMetro(domain, apiDomain);
 
   const downloadTimeout = 300000;
   const downloadPromise = downloadBundlesAndManifests(timestamp);
