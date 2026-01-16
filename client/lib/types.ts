@@ -19,6 +19,7 @@ export interface ClothingItem {
 export interface Outfit {
   id: string;
   name: string;
+  coverImageUri: string | null;
   itemIds: string[];
   accessoryIds: string[];
   tags: string[];

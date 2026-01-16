@@ -66,6 +66,7 @@ export const outfits = pgTable("outfits", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  coverImageUri: text("cover_image_uri"),
   tags: text("tags").array().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
