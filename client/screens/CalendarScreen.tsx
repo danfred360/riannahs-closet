@@ -80,6 +80,8 @@ export default function CalendarScreen() {
   const [plannedOutfits, setPlannedOutfits] = useState<PlannedOutfit[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showOutfitPicker, setShowOutfitPicker] = useState(false);
+  const [planningOutfit, setPlanningOutfit] = useState(false);
+  const [pickerDate, setPickerDate] = useState<string | null>(null);
 
   const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
@@ -165,17 +167,29 @@ export default function CalendarScreen() {
   const handleDatePress = (day: number) => {
     const dateStr = getDateString(new Date(year, month, day));
     setSelectedDate(dateStr);
+    setShowOutfitPicker(false);
+    setPickerDate(null);
     Haptics.selectionAsync();
   };
 
+  const handleOpenOutfitPicker = () => {
+    setPickerDate(selectedDate);
+    setShowOutfitPicker(true);
+  };
+
   const handleAssignOutfit = async (outfit: Outfit) => {
+    const dateToUse = pickerDate || selectedDate;
+    setPlanningOutfit(true);
     try {
-      await planOutfitOptimistic(selectedDate, outfit.id);
+      await planOutfitOptimistic(dateToUse, outfit.id);
       setShowOutfitPicker(false);
+      setPickerDate(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       loadData(true);
     } catch (error) {
       console.error("Error planning outfit:", error);
+    } finally {
+      setPlanningOutfit(false);
     }
   };
 
@@ -388,16 +402,25 @@ export default function CalendarScreen() {
                     </ScrollView>
                   );
                 })()}
-                <Button
-                  variant="outline"
-                  onPress={() => setShowOutfitPicker(false)}
-                  style={styles.cancelButton}
-                >
-                  Cancel
-                </Button>
+                {planningOutfit ? (
+                  <ThemedText type="caption" style={styles.planningText}>
+                    Adding outfit...
+                  </ThemedText>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onPress={() => {
+                      setShowOutfitPicker(false);
+                      setPickerDate(null);
+                    }}
+                    style={styles.cancelButton}
+                  >
+                    Cancel
+                  </Button>
+                )}
               </View>
             ) : (
-              <Button onPress={() => setShowOutfitPicker(true)}>
+              <Button onPress={handleOpenOutfitPicker}>
                 {selectedPlannedOutfits.length > 0 
                   ? (isSelectedDatePast ? "Track another outfit" : "Add another outfit")
                   : (isSelectedDatePast ? "Track an outfit" : "Plan an outfit")}
@@ -521,5 +544,9 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     marginTop: Spacing.sm,
+  },
+  planningText: {
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
