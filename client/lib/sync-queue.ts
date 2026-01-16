@@ -7,13 +7,23 @@ const RETRY_DELAY_MS = 5000;
 
 export type SyncOperation = {
   id: string;
-  type: "create_item" | "update_item" | "delete_item" | "create_outfit" | "update_outfit" | "delete_outfit";
+  type: "create_item" | "update_item" | "delete_item" | "create_outfit" | "update_outfit" | "delete_outfit" | "create_planned_outfit" | "delete_planned_outfit";
   payload: Record<string, unknown>;
   createdAt: number;
   retries: number;
   status: "pending" | "syncing" | "failed";
   userId: string;
 };
+
+const tempIdToRealId: Map<string, string> = new Map();
+
+export function registerTempIdMapping(tempId: string, realId: string): void {
+  tempIdToRealId.set(tempId, realId);
+}
+
+export function resolveTempId(id: string): string {
+  return tempIdToRealId.get(id) || id;
+}
 
 type SyncListener = (queue: SyncOperation[]) => void;
 
@@ -186,6 +196,35 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
         url = new URL(`/api/v1/outfits/${operation.payload.id}`, getApiUrl()).toString();
         method = "DELETE";
         break;
+      case "create_planned_outfit": {
+        const plannedPayload = { ...operation.payload };
+        
+        if (typeof plannedPayload.outfitId === "string" && plannedPayload.outfitId.startsWith("temp_")) {
+          const resolvedId = resolveTempId(plannedPayload.outfitId);
+          if (resolvedId.startsWith("temp_")) {
+            console.log("[Sync] Waiting for outfit to sync before planning:", plannedPayload.outfitId);
+            return false;
+          }
+          plannedPayload.outfitId = resolvedId;
+        }
+        
+        url = new URL("/api/v1/planner", getApiUrl()).toString();
+        method = "POST";
+        body = JSON.stringify({ date: plannedPayload.date, outfitId: plannedPayload.outfitId });
+        break;
+      }
+      case "delete_planned_outfit": {
+        const planId = operation.payload.id as string;
+        
+        if (planId.startsWith("temp_")) {
+          console.log("[Sync] Removing temp planned outfit from queue:", planId);
+          return true;
+        }
+        
+        url = new URL(`/api/v1/planner/${planId}`, getApiUrl()).toString();
+        method = "DELETE";
+        break;
+      }
       default:
         return false;
     }
