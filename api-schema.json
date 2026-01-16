@@ -54,6 +54,7 @@
       "ClothingItemInput": {
         "type": "object",
         "required": ["name", "category", "imageUri"],
+        "additionalProperties": false,
         "properties": {
           "name": { "type": "string" },
           "category": { 
@@ -79,6 +80,7 @@
       "OutfitInput": {
         "type": "object",
         "required": ["name", "itemIds"],
+        "additionalProperties": false,
         "properties": {
           "name": { "type": "string" },
           "itemIds": { "type": "array", "items": { "type": "string", "format": "uuid" } },
@@ -99,6 +101,7 @@
       "PlannedOutfitInput": {
         "type": "object",
         "required": ["date", "outfitId"],
+        "additionalProperties": false,
         "properties": {
           "date": { "type": "string", "format": "date" },
           "outfitId": { "type": "string", "format": "uuid" }
@@ -106,6 +109,7 @@
       },
       "ProfileInput": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "displayName": { "type": "string" },
           "avatarUri": { "type": "string", "nullable": true }
@@ -120,8 +124,9 @@
       "ImageUploadInput": {
         "type": "object",
         "required": ["imageData", "fileName"],
+        "additionalProperties": false,
         "properties": {
-          "imageData": { "type": "string", "description": "Base64-encoded image data" },
+          "imageData": { "type": "string", "description": "Base64-encoded image data as a data URL (e.g., data:image/jpeg;base64,...)" },
           "fileName": { "type": "string", "description": "File name for the image" }
         }
       },
