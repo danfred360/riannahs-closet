@@ -34,6 +34,7 @@ import {
 import {
   getClothingItems,
   addClothingItem,
+  addClothingItemOptimistic,
   updateClothingItem,
   uploadImage,
   generateId,
@@ -251,9 +252,7 @@ export default function AddEditItemScreen() {
     try {
       let finalImageUri = imageUri;
       
-      // Check if this is a new base64 image (not already an object storage key)
       if (imageUri.startsWith("data:")) {
-        // Upload to object storage
         const fileName = `${generateId()}.jpg`;
         const uploadResult = await uploadImage(imageUri, fileName);
         finalImageUri = uploadResult.key;
@@ -269,16 +268,17 @@ export default function AddEditItemScreen() {
           createdAt: originalCreatedAt,
           updatedAt: new Date().toISOString(),
         });
+        queryClient.invalidateQueries({ queryKey: ["/api/v1/items"] });
       } else {
-        await addClothingItem({
+        await addClothingItemOptimistic({
           name: name.trim(),
           category,
           imageUri: finalImageUri,
           tags,
         });
+        queryClient.invalidateQueries({ queryKey: ["/api/v1/items"] });
       }
 
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/items"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {
