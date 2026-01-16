@@ -18,6 +18,7 @@ import { Outfit, ClothingItem, PlannedOutfit } from "@/lib/types";
 import { getOutfits, getClothingItems, getPlannedOutfits } from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 
 type SortOption = "newest" | "recently-worn" | "least-worn" | "never-worn";
 
@@ -269,6 +270,7 @@ export default function OutfitsScreen() {
               </Pressable>
             ))}
           </ScrollView>
+          <SyncStatusIndicator />
         </View>
       ) : null}
       <FlatList
