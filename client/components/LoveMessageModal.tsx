@@ -14,8 +14,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
-const SPECIAL_EMAIL = "riannah.arlene@gmail.com";
-
 export function LoveMessageModal() {
   const [visible, setVisible] = useState(false);
   const { theme } = useTheme();
@@ -29,7 +27,7 @@ export function LoveMessageModal() {
   }, [user, token]);
 
   const checkShouldShow = async () => {
-    if (!user || user.email.toLowerCase() !== SPECIAL_EMAIL) {
+    if (!user) {
       return;
     }
 
@@ -39,9 +37,7 @@ export function LoveMessageModal() {
       });
       if (response.ok) {
         const prefs = await response.json();
-        const today = new Date().toDateString();
-        
-        if (prefs.loveMessageLastSeen !== today) {
+        if (prefs.shouldShowLoveMessage) {
           setVisible(true);
         }
       }

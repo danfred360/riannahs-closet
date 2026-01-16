@@ -125,7 +125,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!prefs) {
         return res.status(404).json({ error: "User not found" });
       }
-      res.json(prefs);
+      
+      const specialEmail = process.env.SPECIAL_POPUP_EMAIL || "";
+      const today = new Date().toDateString();
+      const shouldShowLoveMessage = 
+        specialEmail !== "" &&
+        prefs.email.toLowerCase() === specialEmail.toLowerCase() &&
+        prefs.loveMessageLastSeen !== today;
+      
+      res.json({
+        hasSeenWelcome: prefs.hasSeenWelcome,
+        loveMessageLastSeen: prefs.loveMessageLastSeen,
+        shouldShowLoveMessage,
+      });
     } catch (error) {
       console.error("Get preferences error:", error);
       res.status(500).json({ error: "Failed to get preferences" });

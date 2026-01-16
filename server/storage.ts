@@ -308,9 +308,9 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null } | undefined> {
+  async getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null; email: string } | undefined> {
     const [user] = await db
-      .select({ hasSeenWelcome: users.hasSeenWelcome, loveMessageLastSeen: users.loveMessageLastSeen })
+      .select({ hasSeenWelcome: users.hasSeenWelcome, loveMessageLastSeen: users.loveMessageLastSeen, email: users.email })
       .from(users)
       .where(eq(users.id, userId));
     return user;
