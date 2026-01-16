@@ -332,45 +332,62 @@ export default function CalendarScreen() {
                 <ThemedText type="caption" style={styles.pickerTitle}>
                   Choose an outfit:
                 </ThemedText>
-                {outfits.length === 0 ? (
-                  <ThemedText type="caption">
-                    No outfits yet. Create one first!
-                  </ThemedText>
-                ) : (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.outfitPickerList}
-                  >
-                    {outfits.map((outfit) => (
-                      <Pressable
-                        key={outfit.id}
-                        style={[
-                          styles.outfitPickerItem,
-                          { backgroundColor: theme.backgroundDefault },
-                        ]}
-                        onPress={() => handleAssignOutfit(outfit)}
-                      >
-                        <View style={styles.outfitPickerImages}>
-                          {items
-                            .filter((item) => outfit.itemIds.includes(item.id))
-                            .slice(0, 2)
-                            .map((item) => (
-                              <ObjectStorageImage
-                                key={item.id}
-                                imageUri={item.imageUri}
-                                style={styles.outfitPickerThumb}
-                                contentFit="cover"
-                              />
-                            ))}
-                        </View>
-                        <ThemedText type="small" numberOfLines={1}>
-                          {outfit.name}
-                        </ThemedText>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                )}
+                {(() => {
+                  const alreadyPlannedIds = selectedPlannedOutfits.map(p => p.outfitId);
+                  const availableOutfits = outfits.filter(o => !alreadyPlannedIds.includes(o.id));
+                  
+                  if (outfits.length === 0) {
+                    return (
+                      <ThemedText type="caption">
+                        No outfits yet. Create one first!
+                      </ThemedText>
+                    );
+                  }
+                  
+                  if (availableOutfits.length === 0) {
+                    return (
+                      <ThemedText type="caption">
+                        All outfits are already planned for this day.
+                      </ThemedText>
+                    );
+                  }
+                  
+                  return (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.outfitPickerList}
+                    >
+                      {availableOutfits.map((outfit) => (
+                        <Pressable
+                          key={outfit.id}
+                          style={[
+                            styles.outfitPickerItem,
+                            { backgroundColor: theme.backgroundDefault },
+                          ]}
+                          onPress={() => handleAssignOutfit(outfit)}
+                        >
+                          <View style={styles.outfitPickerImages}>
+                            {items
+                              .filter((item) => outfit.itemIds.includes(item.id))
+                              .slice(0, 2)
+                              .map((item) => (
+                                <ObjectStorageImage
+                                  key={item.id}
+                                  imageUri={item.imageUri}
+                                  style={styles.outfitPickerThumb}
+                                  contentFit="cover"
+                                />
+                              ))}
+                          </View>
+                          <ThemedText type="small" numberOfLines={1}>
+                            {outfit.name}
+                          </ThemedText>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  );
+                })()}
                 <Button
                   variant="outline"
                   onPress={() => setShowOutfitPicker(false)}
