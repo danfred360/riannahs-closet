@@ -174,6 +174,7 @@ export const insertOutfitSchema = createInsertSchema(outfits).omit({
   itemIds: z.array(z.string()),
   accessoryIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
+  coverImageUri: z.string().nullable().optional(),
 });
 
 export const insertPlannedOutfitSchema = createInsertSchema(plannedOutfits).omit({

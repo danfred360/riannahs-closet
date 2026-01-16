@@ -46,6 +46,8 @@ export function OutfitCard({
     scale.value = withSpring(1);
   };
 
+  const hasCoverImage = outfit.coverImageUri != null && outfit.coverImageUri.length > 0;
+
   return (
     <AnimatedPressable
       entering={FadeIn.delay(index * 50).duration(300)}
@@ -59,27 +61,34 @@ export function OutfitCard({
       ]}
     >
       <View style={styles.imageGrid}>
-        {previewItems.map((item, idx) => (
+        {hasCoverImage ? (
           <ObjectStorageImage
-            key={item.id}
-            imageUri={item.imageUri}
-            style={[
-              styles.gridImage,
-              previewItems.length === 1 && styles.singleImage,
-              previewItems.length === 2 && styles.halfImage,
-              previewItems.length === 3 && idx === 0 && styles.halfImage,
-            ]}
+            imageUri={outfit.coverImageUri!}
+            style={styles.singleImage}
             contentFit="cover"
           />
-        ))}
-        {previewItems.length === 0 ? (
+        ) : previewItems.length > 0 ? (
+          previewItems.map((item, idx) => (
+            <ObjectStorageImage
+              key={item.id}
+              imageUri={item.imageUri}
+              style={[
+                styles.gridImage,
+                previewItems.length === 1 && styles.singleImage,
+                previewItems.length === 2 && styles.halfImage,
+                previewItems.length === 3 && idx === 0 && styles.halfImage,
+              ]}
+              contentFit="cover"
+            />
+          ))
+        ) : (
           <View
             style={[
               styles.placeholder,
               { backgroundColor: theme.backgroundSecondary },
             ]}
           />
-        ) : null}
+        )}
       </View>
       <View style={styles.info}>
         <ThemedText type="body" numberOfLines={1} style={styles.name}>
