@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,9 @@ import {
   Pressable,
   ActivityIndicator,
   useWindowDimensions,
+  Platform,
+  NativeSyntheticEvent,
+  TextInputChangeEventData,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -145,10 +148,16 @@ export default function AuthScreen() {
             ]}
             value={email}
             onChangeText={setEmail}
+            onChange={(e: NativeSyntheticEvent<TextInputChangeEventData>) => {
+              if (Platform.OS === "web") {
+                setEmail(e.nativeEvent.text);
+              }
+            }}
             placeholder="Enter your email"
             placeholderTextColor={theme.textSecondary}
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
             keyboardType="email-address"
             returnKeyType={isLogin ? "next" : "next"}
             onSubmitEditing={() => {
@@ -207,9 +216,15 @@ export default function AuthScreen() {
             ]}
             value={password}
             onChangeText={setPassword}
+            onChange={(e: NativeSyntheticEvent<TextInputChangeEventData>) => {
+              if (Platform.OS === "web") {
+                setPassword(e.nativeEvent.text);
+              }
+            }}
             placeholder="Enter your password"
             placeholderTextColor={theme.textSecondary}
             secureTextEntry
+            autoComplete={isLogin ? "current-password" : "new-password"}
             returnKeyType={isLogin ? "done" : "next"}
             onSubmitEditing={() => {
               if (isLogin) {
@@ -240,9 +255,15 @@ export default function AuthScreen() {
               ]}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              onChange={(e: NativeSyntheticEvent<TextInputChangeEventData>) => {
+                if (Platform.OS === "web") {
+                  setConfirmPassword(e.nativeEvent.text);
+                }
+              }}
               placeholder="Confirm your password"
               placeholderTextColor={theme.textSecondary}
               secureTextEntry
+              autoComplete="new-password"
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
               testID="input-confirm-password"
