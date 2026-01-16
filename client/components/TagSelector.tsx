@@ -34,7 +34,16 @@ export function TagSelector({
   const allSuggestions = useMemo(() => {
     const suggestions = new Set<string>(DEFAULT_TAGS);
     existingTags.forEach((tag) => suggestions.add(tag.toLowerCase()));
-    return Array.from(suggestions).sort();
+    
+    const seasonOrder = ["spring", "summer", "fall", "winter"];
+    const allTags = Array.from(suggestions);
+    
+    const seasons = seasonOrder.filter((s) => allTags.includes(s));
+    const otherTags = allTags
+      .filter((tag) => !seasonOrder.includes(tag))
+      .sort((a, b) => a.localeCompare(b));
+    
+    return [...seasons, ...otherTags];
   }, [existingTags]);
 
   const availableSuggestions = useMemo(() => {

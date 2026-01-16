@@ -15,6 +15,7 @@ import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
@@ -129,9 +130,27 @@ export default function AddEditItemScreen() {
     return name.trim() && imageUri;
   };
 
-  const convertToBase64 = async (uri: string): Promise<string> => {
+  const compressAndConvertToBase64 = async (uri: string): Promise<string> => {
     if (uri.startsWith("data:")) {
       return uri;
+    }
+    
+    const MAX_DIMENSION = 800;
+    
+    try {
+      if (Platform.OS !== "web") {
+        const manipulated = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: MAX_DIMENSION } }],
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+        );
+        
+        if (manipulated.base64) {
+          return `data:image/jpeg;base64,${manipulated.base64}`;
+        }
+      }
+    } catch (error) {
+      console.log("Image manipulation failed, falling back to original:", error);
     }
     
     if (Platform.OS === "web") {
@@ -177,7 +196,7 @@ export default function AddEditItemScreen() {
           const mimeType = asset.mimeType || "image/jpeg";
           finalUri = `data:${mimeType};base64,${asset.base64}`;
         } else {
-          finalUri = await convertToBase64(asset.uri);
+          finalUri = await compressAndConvertToBase64(asset.uri);
         }
         
         setImageUri(finalUri);
@@ -214,7 +233,7 @@ export default function AddEditItemScreen() {
           const mimeType = asset.mimeType || "image/jpeg";
           finalUri = `data:${mimeType};base64,${asset.base64}`;
         } else {
-          finalUri = await convertToBase64(asset.uri);
+          finalUri = await compressAndConvertToBase64(asset.uri);
         }
         
         setImageUri(finalUri);
