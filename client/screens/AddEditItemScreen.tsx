@@ -250,15 +250,15 @@ export default function AddEditItemScreen() {
 
     setSaving(true);
     try {
-      let finalImageUri = imageUri;
-      
-      if (imageUri.startsWith("data:")) {
-        const fileName = `${generateId()}.jpg`;
-        const uploadResult = await uploadImage(imageUri, fileName);
-        finalImageUri = uploadResult.key;
-      }
-      
       if (isEditing) {
+        let finalImageUri = imageUri;
+        
+        if (imageUri.startsWith("data:")) {
+          const fileName = `${generateId()}.jpg`;
+          const uploadResult = await uploadImage(imageUri, fileName);
+          finalImageUri = uploadResult.key;
+        }
+        
         await updateClothingItem({
           id: route.params!.itemId!,
           name: name.trim(),
@@ -273,7 +273,7 @@ export default function AddEditItemScreen() {
         await addClothingItemOptimistic({
           name: name.trim(),
           category,
-          imageUri: finalImageUri,
+          imageUri: imageUri,
           tags,
         });
         queryClient.invalidateQueries({ queryKey: ["/api/v1/items"] });

@@ -97,6 +97,26 @@ export function hasPendingSync(): boolean {
   return getPendingSyncCount() > 0;
 }
 
+async function uploadImageToServer(base64Data: string, fileName: string, token: string): Promise<string> {
+  const { getApiUrl } = await import("./query-client");
+  
+  const response = await fetch(new URL("/api/v1/images/upload", getApiUrl()).toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ imageData: base64Data, fileName }),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Image upload failed");
+  }
+  
+  const result = await response.json();
+  return result.key;
+}
+
 async function executeSyncOperation(operation: SyncOperation): Promise<boolean> {
   const { getApiUrl } = await import("./query-client");
   const { getAuthToken } = await import("./auth-state");
@@ -115,11 +135,20 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
     let body: string | undefined;
     
     switch (operation.type) {
-      case "create_item":
+      case "create_item": {
+        const payload = { ...operation.payload };
+        
+        if (typeof payload.imageUri === "string" && payload.imageUri.startsWith("data:")) {
+          const fileName = `${payload.tempId || Date.now()}.jpg`;
+          const uploadedKey = await uploadImageToServer(payload.imageUri, fileName, token);
+          payload.imageUri = uploadedKey;
+        }
+        
         url = new URL("/api/v1/items", getApiUrl()).toString();
         method = "POST";
-        body = JSON.stringify(operation.payload);
+        body = JSON.stringify(payload);
         break;
+      }
       case "update_item":
         url = new URL(`/api/v1/items/${operation.payload.id}`, getApiUrl()).toString();
         method = "PUT";
@@ -129,11 +158,20 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
         url = new URL(`/api/v1/items/${operation.payload.id}`, getApiUrl()).toString();
         method = "DELETE";
         break;
-      case "create_outfit":
+      case "create_outfit": {
+        const outfitPayload = { ...operation.payload };
+        
+        if (typeof outfitPayload.coverImageUri === "string" && outfitPayload.coverImageUri.startsWith("data:")) {
+          const fileName = `outfit-cover-${outfitPayload.tempId || Date.now()}.jpg`;
+          const uploadedKey = await uploadImageToServer(outfitPayload.coverImageUri, fileName, token);
+          outfitPayload.coverImageUri = uploadedKey;
+        }
+        
         url = new URL("/api/v1/outfits", getApiUrl()).toString();
         method = "POST";
-        body = JSON.stringify(operation.payload);
+        body = JSON.stringify(outfitPayload);
         break;
+      }
       case "update_outfit":
         url = new URL(`/api/v1/outfits/${operation.payload.id}`, getApiUrl()).toString();
         method = "PUT";

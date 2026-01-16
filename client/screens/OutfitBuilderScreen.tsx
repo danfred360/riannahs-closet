@@ -203,16 +203,14 @@ export default function OutfitBuilderScreen() {
       if (!result.canceled && result.assets[0]) {
         const localUri = result.assets[0].uri;
         const base64Image = await compressAndConvertToBase64(localUri);
-        const imageKey = `outfit-cover-${generateId()}.jpg`;
-        const uploadResult = await uploadImage(base64Image, imageKey);
-        setCoverImageUri(uploadResult.key);
+        setCoverImageUri(base64Image);
         if (Platform.OS !== "web") {
           Haptics.selectionAsync();
         }
       }
     } catch (error) {
       console.error("Error picking cover image:", error);
-      Alert.alert("Error", "Failed to upload cover photo. Please try again.");
+      Alert.alert("Error", "Failed to process cover photo. Please try again.");
     }
   };
 
@@ -229,10 +227,18 @@ export default function OutfitBuilderScreen() {
     setSaving(true);
     try {
       if (isEditing) {
+        let finalCoverImageUri = coverImageUri;
+        
+        if (coverImageUri && coverImageUri.startsWith("data:")) {
+          const imageKey = `outfit-cover-${generateId()}.jpg`;
+          const uploadResult = await uploadImage(coverImageUri, imageKey);
+          finalCoverImageUri = uploadResult.key;
+        }
+        
         await updateOutfit({
           id: route.params!.outfitId!,
           name: name.trim(),
-          coverImageUri,
+          coverImageUri: finalCoverImageUri,
           itemIds: selectedCoreIds,
           accessoryIds: selectedAccessoryIds,
           tags,
