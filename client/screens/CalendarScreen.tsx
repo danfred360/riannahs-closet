@@ -181,11 +181,11 @@ export default function CalendarScreen() {
     const dateToUse = pickerDate || selectedDate;
     setPlanningOutfit(true);
     try {
-      await planOutfitOptimistic(dateToUse, outfit.id);
+      const newPlan = await planOutfitOptimistic(dateToUse, outfit.id);
+      setPlannedOutfits(prev => [...prev, newPlan]);
       setShowOutfitPicker(false);
       setPickerDate(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      loadData(true);
     } catch (error) {
       console.error("Error planning outfit:", error);
     } finally {
@@ -196,8 +196,8 @@ export default function CalendarScreen() {
   const handleRemoveOutfit = async (plannedOutfitId: string) => {
     try {
       await removePlannedOutfit(plannedOutfitId);
+      setPlannedOutfits(prev => prev.filter(p => p.id !== plannedOutfitId));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      loadData(true);
     } catch (error) {
       console.error("Error removing outfit:", error);
     }
