@@ -2,72 +2,70 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 
-// Production API URL - hardcoded to ensure TestFlight/App Store builds always work
-const PRODUCTION_API_URL = "https://riannahscloset.com/";
-
-/**
- * Determines if the app is running in a development context
- * Uses multiple signals for robust detection:
- * 1. expo-constants executionEnvironment (most reliable)
- * 2. __DEV__ flag (React Native standard)
- */
-function isDevEnvironment(): boolean {
-  // Check expo-constants first (most reliable for Expo apps)
-  // StoreClient = Expo Go, Bare = native build (TestFlight/App Store)
-  const execEnv = Constants.executionEnvironment;
-  
-  if (execEnv === ExecutionEnvironment.StoreClient) {
-    // Running in Expo Go - this is development
-    return true;
-  }
-  
-  if (execEnv === ExecutionEnvironment.Bare) {
-    // Running as a native build (TestFlight/App Store) - this is production
-    return false;
-  }
-  
-  // Fallback to __DEV__ flag
-  return __DEV__;
-}
+// HARDCODED production API URL - this is the ultimate fallback
+// This ensures TestFlight/App Store builds ALWAYS work regardless of build config
+const HARDCODED_PRODUCTION_URL = "https://riannahscloset.com/";
 
 /**
  * Gets the base URL for the Express API server
+ * 
+ * Priority order:
+ * 1. Web: Use dev domain or window.location.origin
+ * 2. Mobile production (TestFlight/App Store): Use EXPO_PUBLIC_API_DOMAIN or hardcoded URL
+ * 3. Mobile development (Expo Go): Use EXPO_PUBLIC_DOMAIN (dev server)
+ * 
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // Development domain from environment (set by Expo dev server)
-  const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
+  // Environment variables baked at build time
+  const apiDomain = process.env.EXPO_PUBLIC_API_DOMAIN;  // Production API (from eas.json)
+  const devDomain = process.env.EXPO_PUBLIC_DOMAIN;       // Development server
   
   // Web platform handling
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    // Development: use the dev domain (includes port :5000)
     if (devDomain) {
       return `https://${devDomain}/`;
     }
-    // Production web: use relative URLs (same origin)
     return window.location.origin + "/";
   }
 
-  // Mobile (iOS/Android) handling
-  const isDev = isDevEnvironment();
+  // Mobile (iOS/Android) - detect environment
+  const execEnv = Constants.executionEnvironment;
+  const isExpoGo = execEnv === ExecutionEnvironment.StoreClient;
+  const isNativeBuild = execEnv === ExecutionEnvironment.Bare;
   
-  console.log("Environment detection:", {
-    executionEnvironment: Constants.executionEnvironment,
+  console.log("API URL Detection:", {
+    platform: Platform.OS,
+    executionEnvironment: execEnv,
+    isExpoGo,
+    isNativeBuild,
     __DEV__,
-    isDev,
-    devDomain: devDomain || "(not set)",
+    EXPO_PUBLIC_API_DOMAIN: apiDomain || "(not set)",
+    EXPO_PUBLIC_DOMAIN: devDomain || "(not set)",
   });
-  
-  if (isDev && devDomain) {
-    // Development/Preview (Expo Go): use the dev server
-    const url = `https://${devDomain}/`;
-    console.log("Mobile API URL (dev):", url);
-    return url;
+
+  // NATIVE BUILDS (TestFlight, App Store)
+  // Always use the production API - either from env var or hardcoded fallback
+  if (isNativeBuild || !__DEV__) {
+    // Prefer EXPO_PUBLIC_API_DOMAIN (set in eas.json), fall back to hardcoded
+    const productionUrl = apiDomain 
+      ? `https://${apiDomain}/` 
+      : HARDCODED_PRODUCTION_URL;
+    console.log("Using production API URL:", productionUrl);
+    return productionUrl;
   }
-  
-  // Production builds (TestFlight, App Store): use hardcoded production URL
-  console.log("Mobile API URL (prod):", PRODUCTION_API_URL);
-  return PRODUCTION_API_URL;
+
+  // EXPO GO (Development/Preview)
+  // Use the dev server if available
+  if (isExpoGo && devDomain) {
+    const devUrl = `https://${devDomain}/`;
+    console.log("Using development API URL:", devUrl);
+    return devUrl;
+  }
+
+  // Fallback for edge cases - use production
+  console.log("Fallback to production API URL:", HARDCODED_PRODUCTION_URL);
+  return HARDCODED_PRODUCTION_URL;
 }
 
 async function throwIfResNotOk(res: Response) {
