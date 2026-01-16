@@ -1,19 +1,40 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Platform } from "react-native";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 
-// EXPO_PUBLIC_API_DOMAIN: Set at build time to configure which backend the app connects to
-// - For production builds: "riannahscloset.com"
-// - For staging/test builds: your dev deployment domain
-// This is injected via EAS build secrets or eas.json env configuration
+// Production API URL - hardcoded to ensure TestFlight/App Store builds always work
+const PRODUCTION_API_URL = "https://riannahscloset.com/";
+
+/**
+ * Determines if the app is running in a development context
+ * Uses multiple signals for robust detection:
+ * 1. expo-constants executionEnvironment (most reliable)
+ * 2. __DEV__ flag (React Native standard)
+ */
+function isDevEnvironment(): boolean {
+  // Check expo-constants first (most reliable for Expo apps)
+  // StoreClient = Expo Go, Bare = native build (TestFlight/App Store)
+  const execEnv = Constants.executionEnvironment;
+  
+  if (execEnv === ExecutionEnvironment.StoreClient) {
+    // Running in Expo Go - this is development
+    return true;
+  }
+  
+  if (execEnv === ExecutionEnvironment.Bare) {
+    // Running as a native build (TestFlight/App Store) - this is production
+    return false;
+  }
+  
+  // Fallback to __DEV__ flag
+  return __DEV__;
+}
 
 /**
  * Gets the base URL for the Express API server
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // Production API URL - used for TestFlight and App Store builds
-  const PRODUCTION_API_URL = "https://riannahscloset.com/";
-  
   // Development domain from environment (set by Expo dev server)
   const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
   
@@ -28,9 +49,17 @@ export function getApiUrl(): string {
   }
 
   // Mobile (iOS/Android) handling
-  // __DEV__ is true in Expo Go and dev builds, false in production builds
-  if (__DEV__ && devDomain) {
-    // Development/Preview: use the dev server
+  const isDev = isDevEnvironment();
+  
+  console.log("Environment detection:", {
+    executionEnvironment: Constants.executionEnvironment,
+    __DEV__,
+    isDev,
+    devDomain: devDomain || "(not set)",
+  });
+  
+  if (isDev && devDomain) {
+    // Development/Preview (Expo Go): use the dev server
     const url = `https://${devDomain}/`;
     console.log("Mobile API URL (dev):", url);
     return url;
