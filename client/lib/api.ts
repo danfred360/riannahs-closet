@@ -297,10 +297,46 @@ export async function planOutfit(date: string, outfitId: string): Promise<Planne
 }
 
 export async function removePlannedOutfit(planId: string): Promise<void> {
+  if (planId.startsWith("temp_")) {
+    return removePlannedOutfitOptimistic(planId);
+  }
+  
   await apiRequest<void>(`/api/v1/planner/${planId}`, {
     method: "DELETE",
   });
   await invalidateCache(CACHE_KEYS.PLANNED_OUTFITS);
+}
+
+export async function planOutfitOptimistic(date: string, outfitId: string): Promise<PlannedOutfit> {
+  const tempId = `temp_${generateId()}`;
+  
+  const optimisticPlan: PlannedOutfit = {
+    id: tempId,
+    outfitId,
+    date,
+  };
+  
+  const cached = await getCached<PlannedOutfit[]>(CACHE_KEYS.PLANNED_OUTFITS);
+  const updatedPlans = cached ? [...cached, optimisticPlan] : [optimisticPlan];
+  await setCache(CACHE_KEYS.PLANNED_OUTFITS, updatedPlans);
+  
+  addToSyncQueue({
+    type: "create_planned_outfit",
+    payload: { tempId, date, outfitId },
+  });
+  
+  return optimisticPlan;
+}
+
+async function removePlannedOutfitOptimistic(planId: string): Promise<void> {
+  const cached = await getCached<PlannedOutfit[]>(CACHE_KEYS.PLANNED_OUTFITS);
+  if (cached) {
+    const updatedPlans = cached.filter((plan) => plan.id !== planId);
+    await setCache(CACHE_KEYS.PLANNED_OUTFITS, updatedPlans);
+  }
+  
+  const { removeSyncOperationByTempId } = await import("./sync-queue");
+  await removeSyncOperationByTempId(planId);
 }
 
 export async function getUserProfile(forceRefresh: boolean = false): Promise<UserProfile> {

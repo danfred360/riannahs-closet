@@ -237,6 +237,17 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
       return false;
     }
     
+    if (operation.type === "create_outfit" && operation.payload.tempId) {
+      try {
+        const result = await response.json();
+        if (result?.id) {
+          registerTempIdMapping(operation.payload.tempId as string, result.id);
+          console.log(`[Sync] Registered temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
+        }
+      } catch {
+      }
+    }
+    
     console.log(`[Sync] Success ${operation.type}`);
     return true;
   } catch (error: any) {
