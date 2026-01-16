@@ -83,4 +83,4 @@ WEB_ONLY = "true"
 OBJECT_STORAGE_BUCKET_ID = "replit-objstore-d4171db4-6ced-4be2-98db-a3cdb2f7a268"
 
 [objectStorage]
-defaultBucketID = "replit-objstore-3e5c444f-dadc-48cb-b2ba-8146e68c4164"
+defaultBucketID = "replit-objstore-d4171db4-6ced-4be2-98db-a3cdb2f7a268"
