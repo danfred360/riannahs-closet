@@ -18,7 +18,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.riannahscloset.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Closet"
       }
     },
     "android": {
@@ -30,7 +31,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.riannahscloset.app"
+      "package": "com.riannahscloset.app",
+      "label": "Closet"
     },
     "web": {
       "output": "single",
