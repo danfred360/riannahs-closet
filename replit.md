@@ -6,6 +6,13 @@ Riannah's Closet is a cloud-based wardrobe management mobile app built with Expo
 
 The app supports multi-user email-based authentication with PostgreSQL database storage, designed for both web and mobile (iOS/Android) platforms with cloud-synced data. Users register and log in with their email address, and can reset their password via email.
 
+### Key Features
+- **Wardrobe cataloging**: Take photos and categorize clothing items
+- **Outfit creation**: Combine items into complete outfits with optional cover photos
+- **Custom cover photos**: Upload photos of yourself wearing an outfit or items laid out together
+- **Calendar planning**: Schedule multiple outfits per day
+- **Cloud sync**: Data synced across web and mobile devices
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
