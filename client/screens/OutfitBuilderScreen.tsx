@@ -194,16 +194,25 @@ export default function OutfitBuilderScreen() {
   const handlePickCoverImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         quality: 0.8,
         allowsEditing: true,
         aspect: [1, 1],
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const localUri = result.assets[0].uri;
-        const base64Image = await compressAndConvertToBase64(localUri);
-        setCoverImageUri(base64Image);
+        const asset = result.assets[0];
+        let finalUri: string;
+        
+        if (asset.base64) {
+          const mimeType = asset.mimeType || "image/jpeg";
+          finalUri = `data:${mimeType};base64,${asset.base64}`;
+        } else {
+          finalUri = await compressAndConvertToBase64(asset.uri);
+        }
+        
+        setCoverImageUri(finalUri);
         if (Platform.OS !== "web") {
           Haptics.selectionAsync();
         }
@@ -211,6 +220,46 @@ export default function OutfitBuilderScreen() {
     } catch (error) {
       console.error("Error picking cover image:", error);
       Alert.alert("Error", "Failed to process cover photo. Please try again.");
+    }
+  };
+
+  const handleTakeCoverPhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Camera permission is needed to take photos."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        let finalUri: string;
+        
+        if (asset.base64) {
+          const mimeType = asset.mimeType || "image/jpeg";
+          finalUri = `data:${mimeType};base64,${asset.base64}`;
+        } else {
+          finalUri = await compressAndConvertToBase64(asset.uri);
+        }
+        
+        setCoverImageUri(finalUri);
+        if (Platform.OS !== "web") {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }
+    } catch (error) {
+      console.error("Error taking cover photo:", error);
+      Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
 
@@ -479,10 +528,17 @@ export default function OutfitBuilderScreen() {
               <View style={styles.coverImageActions}>
                 <Pressable
                   style={[styles.coverActionButton, { backgroundColor: theme.backgroundSecondary }]}
+                  onPress={handleTakeCoverPhoto}
+                >
+                  <Feather name="camera" size={16} color={theme.text} />
+                  <ThemedText type="small">Retake</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[styles.coverActionButton, { backgroundColor: theme.backgroundSecondary }]}
                   onPress={handlePickCoverImage}
                 >
-                  <Feather name="edit-2" size={16} color={theme.text} />
-                  <ThemedText type="small">Change</ThemedText>
+                  <Feather name="image" size={16} color={theme.text} />
+                  <ThemedText type="small">Gallery</ThemedText>
                 </Pressable>
                 <Pressable
                   style={[styles.coverActionButton, { backgroundColor: theme.backgroundSecondary }]}
@@ -494,15 +550,26 @@ export default function OutfitBuilderScreen() {
               </View>
             </View>
           ) : (
-            <Pressable
-              style={[styles.addCoverButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
-              onPress={handlePickCoverImage}
-            >
-              <Feather name="camera" size={24} color={theme.textSecondary} />
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                Add Cover Photo
-              </ThemedText>
-            </Pressable>
+            <View style={styles.coverPhotoButtons}>
+              <Pressable
+                style={[styles.addCoverButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border, flex: 1 }]}
+                onPress={handleTakeCoverPhoto}
+              >
+                <Feather name="camera" size={24} color={theme.textSecondary} />
+                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  Take Photo
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                style={[styles.addCoverButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border, flex: 1 }]}
+                onPress={handlePickCoverImage}
+              >
+                <Feather name="image" size={24} color={theme.textSecondary} />
+                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  From Gallery
+                </ThemedText>
+              </Pressable>
+            </View>
           )}
         </View>
 
@@ -710,5 +777,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 2,
     borderStyle: "dashed",
+  },
+  coverPhotoButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
   },
 });
