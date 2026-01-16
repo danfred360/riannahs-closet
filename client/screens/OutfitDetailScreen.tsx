@@ -12,7 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { TagChip } from "@/components/TagChip";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
-import { Outfit, ClothingItem, PlannedOutfit, CORE_CATEGORIES, ACCESSORY_CATEGORIES } from "@/lib/types";
+import { Outfit, ClothingItem, PlannedOutfit, ClothingCategory, CORE_CATEGORIES, ACCESSORY_CATEGORIES, CATEGORY_LABELS } from "@/lib/types";
 import { getOutfits, getClothingItems, getPlannedOutfits, deleteOutfit } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -105,6 +105,13 @@ export default function OutfitDetailScreen() {
     return items.filter((item) => outfit.accessoryIds?.includes(item.id));
   }, [items, outfit]);
 
+  const groupedAccessoryItems = useMemo(() => {
+    return ACCESSORY_CATEGORIES.map((category) => ({
+      category,
+      items: accessoryItems.filter((item) => item.category === category),
+    })).filter((group) => group.items.length > 0);
+  }, [accessoryItems]);
+
   const performDelete = async () => {
     try {
       await deleteOutfit(route.params.outfitId);
@@ -175,6 +182,18 @@ export default function OutfitDetailScreen() {
     </View>
   );
 
+  const renderCategorySection = (category: ClothingCategory, categoryItems: ClothingItem[]) => {
+    if (categoryItems.length === 0) return null;
+    return (
+      <View key={category} style={styles.categorySection}>
+        <ThemedText type="caption" style={[styles.categoryLabel, { color: theme.textSecondary }]}>
+          {CATEGORY_LABELS[category]}
+        </ThemedText>
+        {renderItemsGrid(categoryItems)}
+      </View>
+    );
+  };
+
   if (!outfit) {
     return (
       <ThemedView style={styles.container}>
@@ -205,12 +224,14 @@ export default function OutfitDetailScreen() {
             {renderItemsGrid(coreItems)}
           </View>
 
-          {accessoryItems.length > 0 ? (
+          {groupedAccessoryItems.length > 0 ? (
             <View style={styles.accessorySection}>
               <ThemedText type="subheading" style={styles.sectionTitle}>
                 Looks Good With
               </ThemedText>
-              {renderItemsGrid(accessoryItems)}
+              {groupedAccessoryItems.map((group) =>
+                renderCategorySection(group.category, group.items)
+              )}
             </View>
           ) : null}
 
@@ -339,6 +360,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: Spacing.md,
+  },
+  categorySection: {
+    marginBottom: Spacing.md,
+  },
+  categoryLabel: {
+    marginBottom: Spacing.sm,
+    fontWeight: "500",
   },
   itemsGrid: {
     flexDirection: "row",
