@@ -378,8 +378,10 @@ export default function CalendarScreen() {
                           style={[
                             styles.outfitPickerItem,
                             { backgroundColor: theme.backgroundDefault },
+                            planningOutfit && styles.outfitPickerItemDisabled,
                           ]}
                           onPress={() => handleAssignOutfit(outfit)}
+                          disabled={planningOutfit}
                         >
                           <View style={styles.outfitPickerImages}>
                             {items
@@ -402,22 +404,17 @@ export default function CalendarScreen() {
                     </ScrollView>
                   );
                 })()}
-                {planningOutfit ? (
-                  <ThemedText type="caption" style={styles.planningText}>
-                    Adding outfit...
-                  </ThemedText>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      setShowOutfitPicker(false);
-                      setPickerDate(null);
-                    }}
-                    style={styles.cancelButton}
-                  >
-                    Cancel
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  onPress={() => {
+                    setShowOutfitPicker(false);
+                    setPickerDate(null);
+                  }}
+                  style={styles.cancelButton}
+                  disabled={planningOutfit}
+                >
+                  Cancel
+                </Button>
               </View>
             ) : (
               <Button onPress={handleOpenOutfitPicker}>
@@ -532,6 +529,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     alignItems: "center",
   },
+  outfitPickerItemDisabled: {
+    opacity: 0.5,
+  },
   outfitPickerImages: {
     flexDirection: "row",
     marginBottom: Spacing.xs,
@@ -544,9 +544,5 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     marginTop: Spacing.sm,
-  },
-  planningText: {
-    textAlign: "center",
-    fontStyle: "italic",
   },
 });
