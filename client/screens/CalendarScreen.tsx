@@ -27,7 +27,7 @@ import {
   getOutfits,
   getClothingItems,
   getPlannedOutfits,
-  planOutfit,
+  planOutfitOptimistic,
   removePlannedOutfit,
 } from "@/lib/api";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -170,7 +170,7 @@ export default function CalendarScreen() {
 
   const handleAssignOutfit = async (outfit: Outfit) => {
     try {
-      await planOutfit(selectedDate, outfit.id);
+      await planOutfitOptimistic(selectedDate, outfit.id);
       setShowOutfitPicker(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       loadData(true);
