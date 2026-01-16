@@ -172,6 +172,12 @@ function serveSupportPage(res: Response, supportPageTemplate: string, appName: s
   res.status(200).send(html);
 }
 
+function servePrivacyPage(res: Response, privacyPageTemplate: string, appName: string) {
+  const html = privacyPageTemplate.replace(/APP_NAME_PLACEHOLDER/g, appName);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).send(html);
+}
+
 function isMobileUserAgent(ua: string): boolean {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
@@ -189,8 +195,15 @@ function configureExpoAndLanding(app: express.Application) {
     "templates",
     "support-page.html",
   );
+  const privacyTemplatePath = path.resolve(
+    process.cwd(),
+    "server",
+    "templates",
+    "privacy-page.html",
+  );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const supportPageTemplate = fs.readFileSync(supportTemplatePath, "utf-8");
+  const privacyPageTemplate = fs.readFileSync(privacyTemplatePath, "utf-8");
   const appName = getAppName();
   const webDistPath = path.resolve(process.cwd(), "dist");
   const hasWebBuild = fs.existsSync(path.join(webDistPath, "index.html"));
@@ -203,6 +216,11 @@ function configureExpoAndLanding(app: express.Application) {
   // Support page route
   app.get("/support", (_req: Request, res: Response) => {
     serveSupportPage(res, supportPageTemplate, appName);
+  });
+
+  // Privacy policy page route
+  app.get("/privacy", (_req: Request, res: Response) => {
+    servePrivacyPage(res, privacyPageTemplate, appName);
   });
 
   // In development, proxy Metro bundler requests through Express
