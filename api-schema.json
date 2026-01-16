@@ -124,10 +124,15 @@
       "ImageUploadInput": {
         "type": "object",
         "required": ["imageData", "fileName"],
-        "additionalProperties": false,
         "properties": {
-          "imageData": { "type": "string", "description": "Base64-encoded image data as a data URL (e.g., data:image/jpeg;base64,...)" },
-          "fileName": { "type": "string", "description": "File name for the image" }
+          "imageData": { 
+            "type": "string", 
+            "description": "Base64-encoded image data as a data URL (e.g., data:image/jpeg;base64,...)"
+          },
+          "fileName": { 
+            "type": "string", 
+            "description": "File name for the image"
+          }
         }
       },
       "ImageUploadResponse": {
