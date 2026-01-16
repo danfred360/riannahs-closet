@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Alert, Pressable, Platform, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { HeaderButton } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -65,14 +66,13 @@ export default function ItemDetailScreen() {
     navigation.setOptions({
       headerTitle: item?.name || "Item Details",
       headerRight: () => (
-        <Pressable
+        <HeaderButton
           onPress={() =>
             navigation.navigate("AddEditItem", { itemId: route.params.itemId })
           }
-          hitSlop={8}
         >
           <Feather name="edit-2" size={20} color={theme.text} />
-        </Pressable>
+        </HeaderButton>
       ),
     });
   }, [navigation, route.params.itemId, theme.text, item?.name]);
