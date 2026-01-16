@@ -133,6 +133,14 @@
         "properties": {
           "dataUrl": { "type": "string", "description": "Base64 data URL of the image" }
         }
+      },
+      "Preferences": {
+        "type": "object",
+        "properties": {
+          "hasSeenWelcome": { "type": "boolean" },
+          "loveMessageLastSeen": { "type": "string", "nullable": true },
+          "shouldShowLoveMessage": { "type": "boolean" }
+        }
       }
     }
   },
@@ -542,6 +550,99 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/preferences": {
+      "get": {
+        "summary": "Get user preferences",
+        "tags": ["Preferences"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User preferences",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Preferences" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/preferences/welcome-seen": {
+      "post": {
+        "summary": "Mark welcome message as seen",
+        "tags": ["Preferences"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Welcome marked as seen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/preferences/love-message-seen": {
+      "post": {
+        "summary": "Mark love message as seen for today",
+        "tags": ["Preferences"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Love message marked as seen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" }
+                  }
+                }
               }
             }
           },
