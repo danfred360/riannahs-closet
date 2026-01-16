@@ -1,0 +1,79 @@
+APP STORE METADATA FOR RIANNAH'S CLOSET
+========================================
+
+PROMOTIONAL TEXT (170 characters max)
+-------------------------------------
+Organize your wardrobe, create stunning outfits, and plan your looks with ease. Your personal style companion for effortless daily dressing.
+
+
+DESCRIPTION (4000 characters max)
+---------------------------------
+Transform the way you get dressed every day with Riannah's Closet, your personal wardrobe companion that makes outfit planning simple and enjoyable.
+
+CATALOG YOUR WARDROBE
+Photograph and organize your entire wardrobe in one place. Categorize items by type (tops, bottoms, dresses, outerwear, shoes, and accessories), add custom tags for easy searching, and never forget what you own again.
+
+CREATE BEAUTIFUL OUTFITS
+Mix and match your clothing items to build complete outfit combinations. Add a cover photo of yourself wearing the look or items laid flat for a polished lookbook feel.
+
+PLAN YOUR LOOKS
+Use the built-in calendar to schedule your outfits in advance. Plan multiple looks per day for different occasions, and always know what to wear before you open your closet.
+
+SYNC ACROSS DEVICES
+Your wardrobe travels with you. Access your clothing catalog and planned outfits from your iPhone, iPad, or web browser with automatic cloud sync.
+
+WORKS OFFLINE
+Add items and create outfits even without an internet connection. Your changes sync automatically when you're back online.
+
+FEATURES:
+- Photo-based wardrobe cataloging
+- Custom categories and tags
+- Outfit builder with cover photos
+- Calendar-based outfit planning
+- Cloud sync across all devices
+- Offline support with background sync
+- Dark mode support
+- Secure email authentication
+
+Riannah's Closet is designed for fashion enthusiasts who want to make the most of their wardrobe and simplify their daily routine. Start building your digital closet today.
+
+
+KEYWORDS (100 characters max, comma-separated)
+----------------------------------------------
+wardrobe,closet,outfit,planner,fashion,clothing,organizer,style,lookbook,daily,calendar
+
+
+SUBTITLE (30 characters max)
+----------------------------
+Your Personal Style Companion
+
+
+WHAT'S NEW (4000 characters max - for updates)
+----------------------------------------------
+Welcome to Riannah's Closet! This initial release includes:
+- Complete wardrobe cataloging with photo support
+- Outfit creation with custom cover photos
+- Calendar-based outfit planning
+- Cloud sync across all your devices
+- Offline support for on-the-go use
+
+
+CATEGORY
+--------
+Primary: Lifestyle
+Secondary: Productivity
+
+
+AGE RATING
+----------
+4+ (No objectionable content)
+
+
+SUPPORT URL
+-----------
+https://riannahscloset.com/support
+
+
+PRIVACY POLICY URL
+------------------
+https://riannahscloset.com/privacy

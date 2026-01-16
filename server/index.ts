@@ -166,6 +166,12 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+function serveSupportPage(res: Response, supportPageTemplate: string, appName: string) {
+  const html = supportPageTemplate.replace(/APP_NAME_PLACEHOLDER/g, appName);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).send(html);
+}
+
 function isMobileUserAgent(ua: string): boolean {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
@@ -177,7 +183,14 @@ function configureExpoAndLanding(app: express.Application) {
     "templates",
     "landing-page.html",
   );
+  const supportTemplatePath = path.resolve(
+    process.cwd(),
+    "server",
+    "templates",
+    "support-page.html",
+  );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
+  const supportPageTemplate = fs.readFileSync(supportTemplatePath, "utf-8");
   const appName = getAppName();
   const webDistPath = path.resolve(process.cwd(), "dist");
   const hasWebBuild = fs.existsSync(path.join(webDistPath, "index.html"));
@@ -186,6 +199,11 @@ function configureExpoAndLanding(app: express.Application) {
   if (hasWebBuild) {
     log("Web build detected at dist/ - will serve to desktop browsers");
   }
+
+  // Support page route
+  app.get("/support", (_req: Request, res: Response) => {
+    serveSupportPage(res, supportPageTemplate, appName);
+  });
 
   // In development, proxy Metro bundler requests through Express
   // This allows mobile devices to access everything through port 80 (via Express on 8081)
