@@ -245,30 +245,34 @@ export default function ProfileScreen() {
       }}
     >
       <View style={styles.profileHeader}>
-        <Pressable
-          onPress={handleChangeAvatar}
-          style={[
-            styles.avatarContainer,
-            { borderColor: theme.border },
-          ]}
-        >
-          {profile.avatarUri ? (
-            <ObjectStorageImage
-              imageUri={profile.avatarUri}
-              style={styles.avatar}
-              contentFit="cover"
-            />
-          ) : (
-            <Image
-              source={require("@/assets/images/avatar-floral.png")}
-              style={styles.avatar}
-              contentFit="cover"
-            />
-          )}
-          <View style={[styles.avatarEditBadge, { backgroundColor: theme.primary }]}>
-            <Feather name="camera" size={14} color={theme.buttonText} />
+        <View style={styles.avatarRow}>
+          <View
+            style={[
+              styles.avatarContainer,
+              { borderColor: theme.border },
+            ]}
+          >
+            {profile.avatarUri ? (
+              <ObjectStorageImage
+                imageUri={profile.avatarUri}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            ) : (
+              <Image
+                source={require("@/assets/images/avatar-floral.png")}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            )}
           </View>
-        </Pressable>
+          <Pressable
+            onPress={handleChangeAvatar}
+            style={[styles.avatarEditButton, { backgroundColor: theme.backgroundSecondary }]}
+          >
+            <Feather name="camera" size={18} color={theme.primary} />
+          </Pressable>
+        </View>
 
         {isEditing ? (
           <View style={styles.editNameContainer}>
@@ -497,19 +501,21 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     borderWidth: 3,
     overflow: "hidden",
-    marginBottom: Spacing.lg,
   },
   avatar: {
     width: "100%",
     height: "100%",
   },
-  avatarEditBadge: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  avatarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  avatarEditButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },
