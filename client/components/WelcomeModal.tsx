@@ -14,7 +14,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Card } from "@/components/Card";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { getApiUrl } from "@/lib/query-client";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface TipItem {
@@ -59,7 +59,14 @@ export function WelcomeModal() {
 
   const handleDismiss = async () => {
     try {
-      await apiRequest("POST", "/api/v1/preferences/welcome-seen", {});
+      await fetch(new URL("/api/v1/preferences/welcome-seen", getApiUrl()).toString(), {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setVisible(false);
     } catch (error) {

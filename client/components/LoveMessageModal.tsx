@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { getApiUrl, apiRequest } from "@/lib/query-client";
+import { getApiUrl } from "@/lib/query-client";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 const SPECIAL_EMAIL = "riannah.arlene@gmail.com";
@@ -53,7 +53,14 @@ export function LoveMessageModal() {
   const handleDismiss = async () => {
     try {
       const today = new Date().toDateString();
-      await apiRequest("POST", "/api/v1/preferences/love-message-seen", { date: today });
+      await fetch(new URL("/api/v1/preferences/love-message-seen", getApiUrl()).toString(), {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ date: today }),
+      });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setVisible(false);
     } catch (error) {
