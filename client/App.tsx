@@ -25,6 +25,7 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import AuthStackNavigator from "@/navigation/AuthStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import { LoveMessageModal } from "@/components/LoveMessageModal";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Colors } from "@/constants/theme";
 
@@ -49,6 +50,7 @@ function AppContent() {
     <>
       <RootStackNavigator />
       <WelcomeModal />
+      <LoveMessageModal />
     </>
   );
 }

@@ -50,6 +50,10 @@ export interface IStorage {
   removePlannedOutfit(userId: string, planId: string): Promise<boolean>;
   
   deleteUser(userId: string): Promise<boolean>;
+  
+  getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null } | undefined>;
+  markWelcomeSeen(userId: string): Promise<void>;
+  updateLoveMessageLastSeen(userId: string, date: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -302,6 +306,28 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(userId: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, userId)).returning();
     return result.length > 0;
+  }
+
+  async getUserPreferences(userId: string): Promise<{ hasSeenWelcome: boolean; loveMessageLastSeen: string | null } | undefined> {
+    const [user] = await db
+      .select({ hasSeenWelcome: users.hasSeenWelcome, loveMessageLastSeen: users.loveMessageLastSeen })
+      .from(users)
+      .where(eq(users.id, userId));
+    return user;
+  }
+
+  async markWelcomeSeen(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ hasSeenWelcome: true, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async updateLoveMessageLastSeen(userId: string, date: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ loveMessageLastSeen: date, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 }
 

@@ -5,27 +5,28 @@ import {
   StyleSheet,
   Pressable,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
-const LOVE_MESSAGE_LAST_SHOWN_KEY = "@riannahs_closet_love_message_date";
 const SPECIAL_EMAIL = "riannah.arlene@gmail.com";
 
 export function LoveMessageModal() {
   const [visible, setVisible] = useState(false);
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    checkShouldShow();
-  }, [user]);
+    if (user && token) {
+      checkShouldShow();
+    }
+  }, [user, token]);
 
   const checkShouldShow = async () => {
     if (!user || user.email.toLowerCase() !== SPECIAL_EMAIL) {
@@ -33,11 +34,16 @@ export function LoveMessageModal() {
     }
 
     try {
-      const lastShown = await AsyncStorage.getItem(LOVE_MESSAGE_LAST_SHOWN_KEY);
-      const today = new Date().toDateString();
-      
-      if (lastShown !== today) {
-        setVisible(true);
+      const response = await fetch(new URL("/api/v1/preferences", getApiUrl()).toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const prefs = await response.json();
+        const today = new Date().toDateString();
+        
+        if (prefs.loveMessageLastSeen !== today) {
+          setVisible(true);
+        }
       }
     } catch (error) {
       console.error("Error checking love message:", error);
@@ -47,7 +53,7 @@ export function LoveMessageModal() {
   const handleDismiss = async () => {
     try {
       const today = new Date().toDateString();
-      await AsyncStorage.setItem(LOVE_MESSAGE_LAST_SHOWN_KEY, today);
+      await apiRequest("POST", "/api/v1/preferences/love-message-seen", { date: today });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setVisible(false);
     } catch (error) {

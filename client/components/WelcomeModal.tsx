@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -14,9 +13,9 @@ import { Image } from "expo-image";
 import { ThemedText } from "@/components/ThemedText";
 import { Card } from "@/components/Card";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl, apiRequest } from "@/lib/query-client";
 import { Spacing, BorderRadius } from "@/constants/theme";
-
-const FIRST_LAUNCH_KEY = "@riannahs_closet_first_launch_v1";
 
 interface TipItem {
   icon: keyof typeof Feather.glyphMap;
@@ -33,30 +32,38 @@ const tips: TipItem[] = [
 export function WelcomeModal() {
   const [visible, setVisible] = useState(false);
   const { theme } = useTheme();
+  const { user, token } = useAuth();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    checkFirstLaunch();
-  }, []);
+    if (user && token) {
+      checkShouldShow();
+    }
+  }, [user, token]);
 
-  const checkFirstLaunch = async () => {
+  const checkShouldShow = async () => {
     try {
-      const hasLaunched = await AsyncStorage.getItem(FIRST_LAUNCH_KEY);
-      if (!hasLaunched) {
-        setVisible(true);
+      const response = await fetch(new URL("/api/v1/preferences", getApiUrl()).toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const prefs = await response.json();
+        if (!prefs.hasSeenWelcome) {
+          setVisible(true);
+        }
       }
     } catch (error) {
-      console.error("Error checking first launch:", error);
+      console.error("Error checking welcome status:", error);
     }
   };
 
   const handleDismiss = async () => {
     try {
-      await AsyncStorage.setItem(FIRST_LAUNCH_KEY, "true");
+      await apiRequest("POST", "/api/v1/preferences/welcome-seen", {});
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setVisible(false);
     } catch (error) {
-      console.error("Error saving first launch:", error);
+      console.error("Error marking welcome seen:", error);
       setVisible(false);
     }
   };

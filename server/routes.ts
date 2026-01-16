@@ -119,6 +119,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/v1/preferences", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const prefs = await storage.getUserPreferences(req.userId!);
+      if (!prefs) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error("Get preferences error:", error);
+      res.status(500).json({ error: "Failed to get preferences" });
+    }
+  });
+
+  app.post("/api/v1/preferences/welcome-seen", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.markWelcomeSeen(req.userId!);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark welcome seen error:", error);
+      res.status(500).json({ error: "Failed to update preference" });
+    }
+  });
+
+  app.post("/api/v1/preferences/love-message-seen", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { date } = req.body;
+      if (!date || typeof date !== "string") {
+        return res.status(400).json({ error: "Date is required" });
+      }
+      await storage.updateLoveMessageLastSeen(req.userId!, date);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update love message seen error:", error);
+      res.status(500).json({ error: "Failed to update preference" });
+    }
+  });
+
   app.post("/api/v1/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
