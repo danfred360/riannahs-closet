@@ -61,7 +61,8 @@
             "enum": ["tops", "bottoms", "dresses", "outerwear", "shoes", "accessories"]
           },
           "imageUri": { "type": "string" },
-          "tags": { "type": "array", "items": { "type": "string" } }
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "tempId": { "type": "string", "description": "Temporary client-side ID for offline sync" }
         }
       },
       "Outfit": {
@@ -81,7 +82,10 @@
         "properties": {
           "name": { "type": "string" },
           "itemIds": { "type": "array", "items": { "type": "string", "format": "uuid" } },
-          "tags": { "type": "array", "items": { "type": "string" } }
+          "accessoryIds": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "coverImageUri": { "type": "string", "nullable": true },
+          "tempId": { "type": "string", "description": "Temporary client-side ID for offline sync" }
         }
       },
       "PlannedOutfit": {
