@@ -122,7 +122,12 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
   const { getAuthToken } = await import("./auth-state");
   
   const token = getAuthToken();
-  if (!token) return false;
+  if (!token) {
+    console.log("[Sync] No auth token, skipping sync");
+    return false;
+  }
+  
+  console.log(`[Sync] Executing ${operation.type} for ${operation.payload.tempId || operation.id}`);
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -188,13 +193,15 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
     const response = await fetch(url, { method, headers, body });
     
     if (!response.ok) {
-      console.error(`Sync failed for ${operation.type}:`, response.status);
+      const errorText = await response.text().catch(() => "");
+      console.error(`[Sync] Failed ${operation.type}: ${response.status} - ${errorText}`);
       return false;
     }
     
+    console.log(`[Sync] Success ${operation.type}`);
     return true;
-  } catch (error) {
-    console.error(`Sync error for ${operation.type}:`, error);
+  } catch (error: any) {
+    console.error(`[Sync] Error ${operation.type}:`, error?.message || error);
     return false;
   }
 }
@@ -256,5 +263,42 @@ export async function retryFailedOperations(): Promise<void> {
   if (hasChanges) {
     await saveSyncQueue();
     processSyncQueue();
+  }
+}
+
+export async function updateSyncOperation(
+  tempId: string,
+  updatedPayload: Record<string, unknown>
+): Promise<void> {
+  const userId = getCacheUserId();
+  if (!userId) return;
+  
+  // Find the sync operation for this temp item
+  const op = syncQueue.find(
+    (o) => o.userId === userId && o.payload.tempId === tempId
+  );
+  
+  if (op) {
+    // Update the payload with new values while preserving tempId and imageUri
+    op.payload = {
+      ...op.payload,
+      ...updatedPayload,
+      tempId, // Always preserve tempId
+    };
+    await saveSyncQueue();
+  }
+}
+
+export async function removeSyncOperationByTempId(tempId: string): Promise<void> {
+  const userId = getCacheUserId();
+  if (!userId) return;
+  
+  const initialLength = syncQueue.length;
+  syncQueue = syncQueue.filter(
+    (op) => !(op.userId === userId && op.payload.tempId === tempId)
+  );
+  
+  if (syncQueue.length !== initialLength) {
+    await saveSyncQueue();
   }
 }

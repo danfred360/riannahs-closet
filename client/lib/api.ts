@@ -92,6 +92,11 @@ export async function addClothingItemOptimistic(
 }
 
 export async function updateClothingItem(item: ClothingItem): Promise<ClothingItem> {
+  // Check if this is a temp item that hasn't synced yet
+  if (item.id.startsWith("temp_")) {
+    return updateClothingItemOptimistic(item);
+  }
+  
   const result = await apiRequest<ClothingItem>(`/api/v1/items/${item.id}`, {
     method: "PUT",
     body: JSON.stringify({
@@ -105,12 +110,52 @@ export async function updateClothingItem(item: ClothingItem): Promise<ClothingIt
   return result;
 }
 
+async function updateClothingItemOptimistic(item: ClothingItem): Promise<ClothingItem> {
+  // Update the item in local cache
+  const cached = await getCached<ClothingItem[]>(CACHE_KEYS.CLOTHING_ITEMS);
+  if (cached) {
+    const updatedItems = cached.map((cachedItem) =>
+      cachedItem.id === item.id ? { ...item, updatedAt: new Date().toISOString() } : cachedItem
+    );
+    await setCache(CACHE_KEYS.CLOTHING_ITEMS, updatedItems);
+  }
+  
+  // Update the pending sync operation with new data
+  const { updateSyncOperation } = await import("./sync-queue");
+  await updateSyncOperation(item.id, {
+    name: item.name,
+    category: item.category,
+    imageUri: item.imageUri,
+    tags: item.tags,
+  });
+  
+  return { ...item, updatedAt: new Date().toISOString() };
+}
+
 export async function deleteClothingItem(itemId: string): Promise<void> {
+  // Check if this is a temp item that hasn't synced yet
+  if (itemId.startsWith("temp_")) {
+    return deleteClothingItemOptimistic(itemId);
+  }
+  
   await apiRequest<void>(`/api/v1/items/${itemId}`, {
     method: "DELETE",
   });
   await invalidateCache(CACHE_KEYS.CLOTHING_ITEMS);
   await invalidateCache(CACHE_KEYS.OUTFITS);
+}
+
+async function deleteClothingItemOptimistic(itemId: string): Promise<void> {
+  // Remove from local cache
+  const cached = await getCached<ClothingItem[]>(CACHE_KEYS.CLOTHING_ITEMS);
+  if (cached) {
+    const updatedItems = cached.filter((item) => item.id !== itemId);
+    await setCache(CACHE_KEYS.CLOTHING_ITEMS, updatedItems);
+  }
+  
+  // Remove the pending sync operation
+  const { removeSyncOperationByTempId } = await import("./sync-queue");
+  await removeSyncOperationByTempId(itemId);
 }
 
 export async function getOutfits(forceRefresh: boolean = false): Promise<Outfit[]> {
@@ -161,6 +206,11 @@ export async function addOutfitOptimistic(
 }
 
 export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
+  // Check if this is a temp outfit that hasn't synced yet
+  if (outfit.id.startsWith("temp_")) {
+    return updateOutfitOptimistic(outfit);
+  }
+  
   const result = await apiRequest<Outfit>(`/api/v1/outfits/${outfit.id}`, {
     method: "PUT",
     body: JSON.stringify({
@@ -175,12 +225,53 @@ export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
   return result;
 }
 
+async function updateOutfitOptimistic(outfit: Outfit): Promise<Outfit> {
+  // Update the outfit in local cache
+  const cached = await getCached<Outfit[]>(CACHE_KEYS.OUTFITS);
+  if (cached) {
+    const updatedOutfits = cached.map((cachedOutfit) =>
+      cachedOutfit.id === outfit.id ? { ...outfit, updatedAt: new Date().toISOString() } : cachedOutfit
+    );
+    await setCache(CACHE_KEYS.OUTFITS, updatedOutfits);
+  }
+  
+  // Update the pending sync operation with new data
+  const { updateSyncOperation } = await import("./sync-queue");
+  await updateSyncOperation(outfit.id, {
+    name: outfit.name,
+    itemIds: outfit.itemIds,
+    accessoryIds: outfit.accessoryIds,
+    tags: outfit.tags,
+    coverImageUri: outfit.coverImageUri,
+  });
+  
+  return { ...outfit, updatedAt: new Date().toISOString() };
+}
+
 export async function deleteOutfit(outfitId: string): Promise<void> {
+  // Check if this is a temp outfit that hasn't synced yet
+  if (outfitId.startsWith("temp_")) {
+    return deleteOutfitOptimistic(outfitId);
+  }
+  
   await apiRequest<void>(`/api/v1/outfits/${outfitId}`, {
     method: "DELETE",
   });
   await invalidateCache(CACHE_KEYS.OUTFITS);
   await invalidateCache(CACHE_KEYS.PLANNED_OUTFITS);
+}
+
+async function deleteOutfitOptimistic(outfitId: string): Promise<void> {
+  // Remove from local cache
+  const cached = await getCached<Outfit[]>(CACHE_KEYS.OUTFITS);
+  if (cached) {
+    const updatedOutfits = cached.filter((outfit) => outfit.id !== outfitId);
+    await setCache(CACHE_KEYS.OUTFITS, updatedOutfits);
+  }
+  
+  // Remove the pending sync operation
+  const { removeSyncOperationByTempId } = await import("./sync-queue");
+  await removeSyncOperationByTempId(outfitId);
 }
 
 export async function getPlannedOutfits(forceRefresh: boolean = false): Promise<PlannedOutfit[]> {
