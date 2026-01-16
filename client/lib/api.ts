@@ -114,6 +114,7 @@ export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
       itemIds: outfit.itemIds,
       accessoryIds: outfit.accessoryIds,
       tags: outfit.tags,
+      coverImageUri: outfit.coverImageUri,
     }),
   });
   await invalidateCache(CACHE_KEYS.OUTFITS);

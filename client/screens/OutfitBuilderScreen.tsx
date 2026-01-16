@@ -16,6 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as FileSystem from "expo-file-system";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -36,6 +39,8 @@ import {
   addOutfit,
   updateOutfit,
   deleteOutfit,
+  uploadImage,
+  generateId,
 } from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -58,6 +63,7 @@ export default function OutfitBuilderScreen() {
   const isWideScreen = windowWidth > MAX_CONTENT_WIDTH;
 
   const [name, setName] = useState("");
+  const [coverImageUri, setCoverImageUri] = useState<string | null>(null);
   const [selectedCoreIds, setSelectedCoreIds] = useState<string[]>([]);
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -92,6 +98,7 @@ export default function OutfitBuilderScreen() {
         const outfit = outfits.find((o) => o.id === route.params?.outfitId);
         if (outfit) {
           setName(outfit.name);
+          setCoverImageUri(outfit.coverImageUri);
           setSelectedCoreIds(outfit.itemIds || []);
           setSelectedAccessoryIds(outfit.accessoryIds || []);
           setOriginalAccessoryIds(outfit.accessoryIds || []);
@@ -135,6 +142,86 @@ export default function OutfitBuilderScreen() {
     return name.trim() && selectedCoreIds.length > 0;
   };
 
+  const compressAndConvertToBase64 = async (uri: string): Promise<string> => {
+    if (uri.startsWith("data:")) {
+      return uri;
+    }
+    
+    const MAX_DIMENSION = 800;
+    
+    try {
+      if (Platform.OS !== "web") {
+        const manipulated = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: MAX_DIMENSION } }],
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+        );
+        
+        if (manipulated.base64) {
+          return `data:image/jpeg;base64,${manipulated.base64}`;
+        }
+      }
+    } catch (error) {
+      console.log("Image manipulation failed, falling back to original:", error);
+    }
+    
+    if (Platform.OS === "web") {
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return uri;
+      }
+    }
+    
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: "base64",
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch {
+      return uri;
+    }
+  };
+
+  const handlePickCoverImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const localUri = result.assets[0].uri;
+        const base64Image = await compressAndConvertToBase64(localUri);
+        const imageKey = `outfit-cover-${generateId()}.jpg`;
+        const uploadResult = await uploadImage(base64Image, imageKey);
+        setCoverImageUri(uploadResult.key);
+        if (Platform.OS !== "web") {
+          Haptics.selectionAsync();
+        }
+      }
+    } catch (error) {
+      console.error("Error picking cover image:", error);
+      Alert.alert("Error", "Failed to upload cover photo. Please try again.");
+    }
+  };
+
+  const handleRemoveCoverImage = () => {
+    setCoverImageUri(null);
+    if (Platform.OS !== "web") {
+      Haptics.selectionAsync();
+    }
+  };
+
   const handleSave = async () => {
     if (!canSave()) return;
 
@@ -144,6 +231,7 @@ export default function OutfitBuilderScreen() {
         await updateOutfit({
           id: route.params!.outfitId!,
           name: name.trim(),
+          coverImageUri,
           itemIds: selectedCoreIds,
           accessoryIds: selectedAccessoryIds,
           tags,
@@ -153,6 +241,7 @@ export default function OutfitBuilderScreen() {
       } else {
         await addOutfit({
           name: name.trim(),
+          coverImageUri,
           itemIds: selectedCoreIds,
           accessoryIds: selectedAccessoryIds,
           tags,
@@ -367,6 +456,50 @@ export default function OutfitBuilderScreen() {
         </View>
 
         <View style={styles.section}>
+          <ThemedText type="caption" style={styles.label}>
+            Cover Photo (Optional)
+          </ThemedText>
+          <ThemedText type="small" style={styles.coverSubtitle}>
+            Add a photo of you wearing this outfit or the items laid out together
+          </ThemedText>
+          {coverImageUri ? (
+            <View style={styles.coverImageContainer}>
+              <ObjectStorageImage
+                imageUri={coverImageUri}
+                style={styles.coverImage}
+                contentFit="cover"
+              />
+              <View style={styles.coverImageActions}>
+                <Pressable
+                  style={[styles.coverActionButton, { backgroundColor: theme.backgroundSecondary }]}
+                  onPress={handlePickCoverImage}
+                >
+                  <Feather name="edit-2" size={16} color={theme.text} />
+                  <ThemedText type="small">Change</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[styles.coverActionButton, { backgroundColor: theme.backgroundSecondary }]}
+                  onPress={handleRemoveCoverImage}
+                >
+                  <Feather name="trash-2" size={16} color={theme.error} />
+                  <ThemedText type="small" style={{ color: theme.error }}>Remove</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={[styles.addCoverButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+              onPress={handlePickCoverImage}
+            >
+              <Feather name="camera" size={24} color={theme.textSecondary} />
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Add Cover Photo
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.section}>
           <ThemedText type="subheading" style={styles.sectionTitle}>
             The Outfit
           </ThemedText>
@@ -535,5 +668,40 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: Spacing.lg,
+  },
+  coverSubtitle: {
+    opacity: 0.7,
+    marginBottom: Spacing.md,
+  },
+  coverImageContainer: {
+    alignItems: "center",
+  },
+  coverImage: {
+    width: 200,
+    height: 200,
+    borderRadius: BorderRadius.md,
+  },
+  coverImageActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  coverActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+  },
+  addCoverButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xl,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    borderStyle: "dashed",
   },
 });
