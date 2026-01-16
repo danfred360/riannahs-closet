@@ -127,14 +127,16 @@ async function uploadImageToServer(base64Data: string, fileName: string, token: 
   return result.key;
 }
 
-async function executeSyncOperation(operation: SyncOperation): Promise<boolean> {
+type SyncResult = "success" | "failed" | "waiting";
+
+async function executeSyncOperation(operation: SyncOperation): Promise<SyncResult> {
   const { getApiUrl } = await import("./query-client");
   const { getAuthToken } = await import("./auth-state");
   
   const token = getAuthToken();
   if (!token) {
     console.log("[Sync] No auth token, skipping sync");
-    return false;
+    return "waiting";
   }
   
   console.log(`[Sync] Executing ${operation.type} for ${operation.payload.tempId || operation.id}`);
@@ -176,6 +178,40 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
       case "create_outfit": {
         const outfitPayload = { ...operation.payload };
         
+        if (Array.isArray(outfitPayload.itemIds)) {
+          const resolvedItemIds: string[] = [];
+          for (const itemId of outfitPayload.itemIds as string[]) {
+            if (itemId.startsWith("temp_")) {
+              const resolvedId = resolveTempId(itemId);
+              if (resolvedId.startsWith("temp_")) {
+                console.log("[Sync] Waiting for item to sync before creating outfit:", itemId);
+                return "waiting";
+              }
+              resolvedItemIds.push(resolvedId);
+            } else {
+              resolvedItemIds.push(itemId);
+            }
+          }
+          outfitPayload.itemIds = resolvedItemIds;
+        }
+        
+        if (Array.isArray(outfitPayload.accessoryIds)) {
+          const resolvedAccessoryIds: string[] = [];
+          for (const accId of outfitPayload.accessoryIds as string[]) {
+            if (accId.startsWith("temp_")) {
+              const resolvedId = resolveTempId(accId);
+              if (resolvedId.startsWith("temp_")) {
+                console.log("[Sync] Waiting for accessory to sync before creating outfit:", accId);
+                return "waiting";
+              }
+              resolvedAccessoryIds.push(resolvedId);
+            } else {
+              resolvedAccessoryIds.push(accId);
+            }
+          }
+          outfitPayload.accessoryIds = resolvedAccessoryIds;
+        }
+        
         if (typeof outfitPayload.coverImageUri === "string" && outfitPayload.coverImageUri.startsWith("data:")) {
           const fileName = `outfit-cover-${outfitPayload.tempId || Date.now()}.jpg`;
           const uploadedKey = await uploadImageToServer(outfitPayload.coverImageUri, fileName, token);
@@ -203,7 +239,7 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
           const resolvedId = resolveTempId(plannedPayload.outfitId);
           if (resolvedId.startsWith("temp_")) {
             console.log("[Sync] Waiting for outfit to sync before planning:", plannedPayload.outfitId);
-            return false;
+            return "waiting";
           }
           plannedPayload.outfitId = resolvedId;
         }
@@ -218,7 +254,7 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
         
         if (planId.startsWith("temp_")) {
           console.log("[Sync] Removing temp planned outfit from queue:", planId);
-          return true;
+          return "success";
         }
         
         url = new URL(`/api/v1/planner/${planId}`, getApiUrl()).toString();
@@ -226,7 +262,7 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
         break;
       }
       default:
-        return false;
+        return "failed";
     }
     
     const response = await fetch(url, { method, headers, body });
@@ -234,7 +270,18 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
       console.error(`[Sync] Failed ${operation.type}: ${response.status} - ${errorText}`);
-      return false;
+      return "failed";
+    }
+    
+    if (operation.type === "create_item" && operation.payload.tempId) {
+      try {
+        const result = await response.json();
+        if (result?.id) {
+          registerTempIdMapping(operation.payload.tempId as string, result.id);
+          console.log(`[Sync] Registered item temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
+        }
+      } catch {
+      }
     }
     
     if (operation.type === "create_outfit" && operation.payload.tempId) {
@@ -242,17 +289,17 @@ async function executeSyncOperation(operation: SyncOperation): Promise<boolean> 
         const result = await response.json();
         if (result?.id) {
           registerTempIdMapping(operation.payload.tempId as string, result.id);
-          console.log(`[Sync] Registered temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
+          console.log(`[Sync] Registered outfit temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
         }
       } catch {
       }
     }
     
     console.log(`[Sync] Success ${operation.type}`);
-    return true;
+    return "success";
   } catch (error: any) {
     console.error(`[Sync] Error ${operation.type}:`, error?.message || error);
-    return false;
+    return "failed";
   }
 }
 
@@ -270,10 +317,14 @@ export async function processSyncQueue(): Promise<void> {
       op.status = "syncing";
       await saveSyncQueue();
       
-      const success = await executeSyncOperation(op);
+      const result = await executeSyncOperation(op);
       
-      if (success) {
+      if (result === "success") {
         await removeFromSyncQueue(op.id);
+      } else if (result === "waiting") {
+        op.status = "pending";
+        await saveSyncQueue();
+        setTimeout(() => processSyncQueue(), RETRY_DELAY_MS);
       } else {
         op.retries += 1;
         op.status = op.retries >= MAX_RETRIES ? "failed" : "pending";
