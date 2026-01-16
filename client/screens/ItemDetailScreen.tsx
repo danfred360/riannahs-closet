@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Alert, Pressable, Platform, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { HeaderButton } from "@react-navigation/elements";
+import { HeaderButton, useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -27,6 +27,7 @@ export default function ItemDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const { width: windowWidth } = useWindowDimensions();
@@ -135,6 +136,7 @@ export default function ItemDetailScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           { 
+            paddingTop: headerHeight + Spacing.md,
             paddingBottom: insets.bottom + Spacing.xl,
             alignItems: isWideScreen ? "center" : "stretch",
           },
@@ -231,7 +233,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scrollContent: {
-    paddingTop: Spacing.xl,
   },
   contentWrapper: {
     width: "100%",
