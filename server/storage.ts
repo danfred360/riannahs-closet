@@ -424,10 +424,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async planOutfit(userId: string, plan: InsertPlannedOutfit): Promise<PlannedOutfit> {
-    await db.delete(plannedOutfits).where(
-      and(eq(plannedOutfits.userId, userId), eq(plannedOutfits.date, plan.date))
-    );
-    
     const [created] = await db
       .insert(plannedOutfits)
       .values({ ...plan, userId })
