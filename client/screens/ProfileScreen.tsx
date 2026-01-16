@@ -7,16 +7,20 @@ import {
   Alert,
   Platform,
   Linking,
+  ActionSheetIOS,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { Card } from "@/components/Card";
+import { ObjectStorageImage } from "@/components/ObjectStorageImage";
 import { useTheme } from "@/hooks/useTheme";
 import { UserProfile, ClothingItem, Outfit } from "@/lib/types";
 import {
@@ -25,6 +29,8 @@ import {
   getClothingItems,
   getOutfits,
   deleteAccount,
+  uploadImage,
+  generateId,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
@@ -96,6 +102,139 @@ export default function ProfileScreen() {
     setIsEditing(false);
   };
 
+  const convertToBase64 = async (uri: string): Promise<string> => {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: "base64",
+    });
+    return `data:image/jpeg;base64,${base64}`;
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      if (Platform.OS === "web") {
+        alert("Permission to access photos is required.");
+      } else {
+        Alert.alert("Permission Required", "Please allow access to your photos to change your profile picture.");
+      }
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await handleImageSelected(result.assets[0]);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      if (Platform.OS === "web") {
+        alert("Permission to access camera is required.");
+      } else {
+        Alert.alert("Permission Required", "Please allow access to your camera to take a profile picture.");
+      }
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await handleImageSelected(result.assets[0]);
+    }
+  };
+
+  const handleImageSelected = async (asset: ImagePicker.ImagePickerAsset) => {
+    try {
+      let imageData: string;
+      if (asset.base64) {
+        const mimeType = asset.mimeType || "image/jpeg";
+        imageData = `data:${mimeType};base64,${asset.base64}`;
+      } else {
+        imageData = await convertToBase64(asset.uri);
+      }
+
+      const fileName = `avatar-${generateId()}.jpg`;
+      const uploadResult = await uploadImage(imageData, fileName);
+      
+      const newProfile = { ...profile, avatarUri: uploadResult.key };
+      await saveUserProfile(newProfile);
+      setProfile(newProfile);
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      if (Platform.OS === "web") {
+        alert("Failed to update profile picture. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to update profile picture. Please try again.");
+      }
+    }
+  };
+
+  const handleChangeAvatar = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Take Photo", "Choose from Library", ...(profile.avatarUri ? ["Remove Photo"] : [])],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: profile.avatarUri ? 3 : undefined,
+        },
+        async (buttonIndex) => {
+          if (buttonIndex === 1) {
+            takePhoto();
+          } else if (buttonIndex === 2) {
+            pickImage();
+          } else if (buttonIndex === 3 && profile.avatarUri) {
+            const newProfile = { ...profile, avatarUri: null };
+            await saveUserProfile(newProfile);
+            setProfile(newProfile);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+      );
+    } else {
+      const options = ["Take Photo", "Choose from Library"];
+      if (profile.avatarUri) {
+        options.push("Remove Photo");
+      }
+      options.push("Cancel");
+      
+      Alert.alert("Change Profile Picture", "", 
+        options.map((option, index) => {
+          if (option === "Take Photo") {
+            return { text: option, onPress: takePhoto };
+          } else if (option === "Choose from Library") {
+            return { text: option, onPress: pickImage };
+          } else if (option === "Remove Photo") {
+            return {
+              text: option,
+              style: "destructive" as const,
+              onPress: async () => {
+                const newProfile = { ...profile, avatarUri: null };
+                await saveUserProfile(newProfile);
+                setProfile(newProfile);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              },
+            };
+          }
+          return { text: option, style: "cancel" as const };
+        })
+      );
+    }
+  };
+
   return (
     <KeyboardAwareScrollViewCompat
       style={{ flex: 1, backgroundColor: theme.backgroundRoot }}
@@ -106,18 +245,30 @@ export default function ProfileScreen() {
       }}
     >
       <View style={styles.profileHeader}>
-        <View
+        <Pressable
+          onPress={handleChangeAvatar}
           style={[
             styles.avatarContainer,
             { borderColor: theme.border },
           ]}
         >
-          <Image
-            source={require("@/assets/images/avatar-floral.png")}
-            style={styles.avatar}
-            contentFit="cover"
-          />
-        </View>
+          {profile.avatarUri ? (
+            <ObjectStorageImage
+              imageUri={profile.avatarUri}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          ) : (
+            <Image
+              source={require("@/assets/images/avatar-floral.png")}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          )}
+          <View style={[styles.avatarEditBadge, { backgroundColor: theme.primary }]}>
+            <Feather name="camera" size={14} color={theme.buttonText} />
+          </View>
+        </Pressable>
 
         {isEditing ? (
           <View style={styles.editNameContainer}>
@@ -351,6 +502,16 @@ const styles = StyleSheet.create({
   avatar: {
     width: "100%",
     height: "100%",
+  },
+  avatarEditBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
   },
   nameRow: {
     flexDirection: "row",
