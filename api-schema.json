@@ -104,7 +104,8 @@
         "additionalProperties": false,
         "properties": {
           "date": { "type": "string", "format": "date" },
-          "outfitId": { "type": "string", "format": "uuid" }
+          "outfitId": { "type": "string", "format": "uuid" },
+          "tempId": { "type": "string", "description": "Temporary client-side ID for offline sync" }
         }
       },
       "ProfileInput": {
