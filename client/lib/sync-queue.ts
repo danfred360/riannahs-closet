@@ -239,3 +239,22 @@ export async function clearUserSyncQueue(): Promise<void> {
   syncQueue = syncQueue.filter((op) => op.userId !== userId);
   await saveSyncQueue();
 }
+
+export async function retryFailedOperations(): Promise<void> {
+  const userId = getCacheUserId();
+  if (!userId) return;
+  
+  let hasChanges = false;
+  for (const op of syncQueue) {
+    if (op.userId === userId && op.status === "failed") {
+      op.status = "pending";
+      op.retries = 0;
+      hasChanges = true;
+    }
+  }
+  
+  if (hasChanges) {
+    await saveSyncQueue();
+    processSyncQueue();
+  }
+}

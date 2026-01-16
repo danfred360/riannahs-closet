@@ -13,7 +13,7 @@ import { useEffect } from "react";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
-import { processSyncQueue } from "@/lib/sync-queue";
+import { retryFailedOperations } from "@/lib/sync-queue";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 export function SyncStatusIndicator() {
@@ -44,7 +44,7 @@ export function SyncStatusIndicator() {
   }
 
   const handleRetry = () => {
-    processSyncQueue();
+    retryFailedOperations();
   };
 
   return (
