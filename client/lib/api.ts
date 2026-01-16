@@ -1,11 +1,14 @@
 import { getApiUrl } from "./query-client";
 import { ClothingItem, Outfit, PlannedOutfit, UserProfile } from "./types";
 import { getCached, setCache, invalidateCache, CACHE_KEYS } from "./cache";
-
-let authToken: string | null = null;
+import { setAuthToken as setSharedAuthToken, getAuthToken } from "./auth-state";
+import { addToSyncQueue, processSyncQueue, loadSyncQueue } from "./sync-queue";
 
 export function setAuthToken(token: string | null) {
-  authToken = token;
+  setSharedAuthToken(token);
+  if (token) {
+    loadSyncQueue().then(() => processSyncQueue());
+  }
 }
 
 async function apiRequest<T>(
@@ -13,14 +16,15 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = new URL(path, getApiUrl()).toString();
+  const token = getAuthToken();
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
   
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   
   const response = await fetch(url, {
@@ -60,6 +64,31 @@ export async function addClothingItem(item: Omit<ClothingItem, "id" | "createdAt
   });
   await invalidateCache(CACHE_KEYS.CLOTHING_ITEMS);
   return result;
+}
+
+export async function addClothingItemOptimistic(
+  item: Omit<ClothingItem, "id" | "createdAt" | "updatedAt">
+): Promise<ClothingItem> {
+  const now = new Date().toISOString();
+  const tempId = `temp_${generateId()}`;
+  
+  const optimisticItem: ClothingItem = {
+    ...item,
+    id: tempId,
+    createdAt: now,
+    updatedAt: now,
+  };
+  
+  const cached = await getCached<ClothingItem[]>(CACHE_KEYS.CLOTHING_ITEMS);
+  const updatedItems = cached ? [optimisticItem, ...cached] : [optimisticItem];
+  await setCache(CACHE_KEYS.CLOTHING_ITEMS, updatedItems);
+  
+  addToSyncQueue({
+    type: "create_item",
+    payload: { ...item, tempId },
+  });
+  
+  return optimisticItem;
 }
 
 export async function updateClothingItem(item: ClothingItem): Promise<ClothingItem> {
@@ -104,6 +133,31 @@ export async function addOutfit(outfit: Omit<Outfit, "id" | "createdAt" | "updat
   });
   await invalidateCache(CACHE_KEYS.OUTFITS);
   return result;
+}
+
+export async function addOutfitOptimistic(
+  outfit: Omit<Outfit, "id" | "createdAt" | "updatedAt">
+): Promise<Outfit> {
+  const now = new Date().toISOString();
+  const tempId = `temp_${generateId()}`;
+  
+  const optimisticOutfit: Outfit = {
+    ...outfit,
+    id: tempId,
+    createdAt: now,
+    updatedAt: now,
+  };
+  
+  const cached = await getCached<Outfit[]>(CACHE_KEYS.OUTFITS);
+  const updatedOutfits = cached ? [optimisticOutfit, ...cached] : [optimisticOutfit];
+  await setCache(CACHE_KEYS.OUTFITS, updatedOutfits);
+  
+  addToSyncQueue({
+    type: "create_outfit",
+    payload: { ...outfit, tempId },
+  });
+  
+  return optimisticOutfit;
 }
 
 export async function updateOutfit(outfit: Outfit): Promise<Outfit> {
