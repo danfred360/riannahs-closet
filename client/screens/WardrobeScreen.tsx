@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, useWindowDimensions } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, useWindowDimensions, TextInput, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedView } from "@/components/ThemedView";
-import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { TagFilterDropdown } from "@/components/TagFilterDropdown";
 import { ClothingItemCard } from "@/components/ClothingItemCard";
@@ -16,7 +16,7 @@ import { SkeletonGrid } from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { ClothingItem, ClothingCategory } from "@/lib/types";
 import { getClothingItems } from "@/lib/api";
-import { Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -141,6 +141,36 @@ export default function WardrobeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.searchWrapper, { paddingTop: headerHeight + Spacing.lg }]}>
+        <View style={styles.searchRow}>
+          <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="search" size={18} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search by name..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 ? (
+              <Pressable onPress={() => setSearchQuery("")}>
+                <Feather name="x" size={18} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+          <TagFilterDropdown
+            availableTags={availableTags}
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
+        </View>
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </View>
       <FlatList
         key={`wardrobe-grid-${numColumns}`}
         data={filteredItems}
@@ -151,33 +181,11 @@ export default function WardrobeScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: Spacing.md,
             paddingBottom: tabBarHeight + Spacing["5xl"],
           },
           filteredItems.length === 0 && styles.emptyContent,
         ]}
-        ListHeaderComponent={
-          <View>
-            <View style={styles.searchRow}>
-              <View style={styles.searchBarWrapper}>
-                <SearchBar
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Search by name..."
-                />
-              </View>
-              <TagFilterDropdown
-                availableTags={availableTags}
-                selectedTags={selectedTags}
-                onTagsChange={setSelectedTags}
-              />
-            </View>
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
-          </View>
-        }
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
@@ -216,13 +224,27 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH,
     maxWidth: ITEM_WIDTH,
   },
+  searchWrapper: {
+    paddingHorizontal: Spacing.lg,
+  },
   searchRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  searchBarWrapper: {
+  searchContainer: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: Typography.body.fontSize,
+    paddingVertical: Spacing.xs,
   },
 });
