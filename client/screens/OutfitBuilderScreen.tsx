@@ -37,6 +37,7 @@ import {
   getClothingItems,
   getOutfits,
   addOutfit,
+  addOutfitOptimistic,
   updateOutfit,
   deleteOutfit,
   uploadImage,
@@ -239,7 +240,7 @@ export default function OutfitBuilderScreen() {
           updatedAt: new Date().toISOString(),
         });
       } else {
-        await addOutfit({
+        await addOutfitOptimistic({
           name: name.trim(),
           coverImageUri,
           itemIds: selectedCoreIds,

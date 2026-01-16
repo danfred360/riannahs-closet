@@ -18,6 +18,7 @@ import { ClothingItem, ClothingCategory } from "@/lib/types";
 import { getClothingItems } from "@/lib/api";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -170,6 +171,7 @@ export default function WardrobeScreen() {
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
+        <SyncStatusIndicator />
       </View>
       <FlatList
         key={`wardrobe-grid-${numColumns}`}
