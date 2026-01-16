@@ -235,7 +235,7 @@ export const insertClothingItemSchema = createInsertSchema(clothingItems).omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
-});
+}).passthrough();
 
 export const insertOutfitSchema = createInsertSchema(outfits).omit({
   id: true,
@@ -247,7 +247,7 @@ export const insertOutfitSchema = createInsertSchema(outfits).omit({
   accessoryIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   coverImageUri: z.string().nullable().optional(),
-});
+}).passthrough();
 
 export const insertPlannedOutfitSchema = createInsertSchema(plannedOutfits).omit({
   id: true,

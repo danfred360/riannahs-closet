@@ -241,7 +241,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClothingItem(userId: string, item: InsertClothingItem): Promise<ClothingItem> {
-    const { tags: tagNames, ...itemData } = item;
+    const { tags: tagNames, tempId, ...itemData } = item as InsertClothingItem & { tempId?: string };
     
     const [created] = await db
       .insert(clothingItems)
@@ -329,7 +329,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOutfit(userId: string, outfit: InsertOutfit): Promise<Outfit & { itemIds: string[]; accessoryIds: string[] }> {
-    const { itemIds, accessoryIds, tags: tagNames, ...outfitData } = outfit;
+    const { itemIds, accessoryIds, tags: tagNames, tempId, ...outfitData } = outfit as InsertOutfit & { tempId?: string };
     
     const [created] = await db
       .insert(outfits)
