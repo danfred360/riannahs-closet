@@ -11,16 +11,14 @@ import { Platform } from "react-native";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // EXPO_PUBLIC_API_DOMAIN is the production API domain, set at build time
-  // EXPO_PUBLIC_DOMAIN is set in development for the Replit dev server
-  const apiDomain = process.env.EXPO_PUBLIC_API_DOMAIN;
-  const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
+  // HARDCODED production domain for mobile apps - this ensures TestFlight/App Store
+  // builds always connect to the correct API regardless of build environment
+  const PRODUCTION_API_URL = "https://riannahscloset.com/";
   
-  // Production domain fallback - ensures mobile apps always use the correct API
-  const PRODUCTION_DOMAIN = "riannahscloset.com";
-
-  // On web platform
+  // For web platform only, we need dynamic URL handling
   if (Platform.OS === "web" && typeof window !== "undefined") {
+    const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
+    
     // Development: use the dev domain (includes port :5000)
     if (devDomain) {
       return `https://${devDomain}/`;
@@ -30,13 +28,10 @@ export function getApiUrl(): string {
     return window.location.origin + "/";
   }
 
-  // Mobile: prefer API domain, fall back to dev domain, then production fallback
-  const host = apiDomain || devDomain || PRODUCTION_DOMAIN;
-
-  const url = new URL(`https://${host}`);
-  console.log("Mobile API URL:", url.href);
-
-  return url.href;
+  // iOS and Android: ALWAYS use the production API URL
+  // This is intentionally hardcoded to avoid any env var issues with mobile builds
+  console.log("Mobile API URL:", PRODUCTION_API_URL);
+  return PRODUCTION_API_URL;
 }
 
 async function throwIfResNotOk(res: Response) {
