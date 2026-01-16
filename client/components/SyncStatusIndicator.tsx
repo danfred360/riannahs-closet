@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -7,7 +7,6 @@ import Animated, {
   withSequence,
   withTiming,
   useSharedValue,
-  withDelay,
 } from "react-native-reanimated";
 import { useEffect } from "react";
 import { ThemedText } from "./ThemedText";
@@ -16,9 +15,27 @@ import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { retryFailedOperations } from "@/lib/sync-queue";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
+function formatSyncMessage(itemCount: number, outfitCount: number): string {
+  const parts: string[] = [];
+  
+  if (itemCount > 0) {
+    parts.push(`${itemCount} ${itemCount === 1 ? "item" : "items"}`);
+  }
+  
+  if (outfitCount > 0) {
+    parts.push(`${outfitCount} ${outfitCount === 1 ? "outfit" : "outfits"}`);
+  }
+  
+  if (parts.length === 0) {
+    return "Syncing...";
+  }
+  
+  return `Syncing ${parts.join(", ")}...`;
+}
+
 export function SyncStatusIndicator() {
   const { theme } = useTheme();
-  const { pendingCount, isSyncing, failedCount, hasPending } = useSyncStatus();
+  const { itemCount, outfitCount, isSyncing, failedCount, hasPending } = useSyncStatus();
   const rotation = useSharedValue(0);
 
   useEffect(() => {
@@ -62,7 +79,7 @@ export function SyncStatusIndicator() {
             <Feather name="refresh-cw" size={14} color={theme.textSecondary} />
           </Animated.View>
           <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.xs }}>
-            Syncing {pendingCount} {pendingCount === 1 ? "item" : "items"}...
+            {formatSyncMessage(itemCount, outfitCount)}
           </ThemedText>
         </View>
       )}
