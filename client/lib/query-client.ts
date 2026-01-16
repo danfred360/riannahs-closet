@@ -11,26 +11,33 @@ import { Platform } from "react-native";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // HARDCODED production domain for mobile apps - this ensures TestFlight/App Store
-  // builds always connect to the correct API regardless of build environment
+  // Production API URL - used for TestFlight and App Store builds
   const PRODUCTION_API_URL = "https://riannahscloset.com/";
   
-  // For web platform only, we need dynamic URL handling
+  // Development domain from environment (set by Expo dev server)
+  const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
+  
+  // Web platform handling
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
-    
     // Development: use the dev domain (includes port :5000)
     if (devDomain) {
       return `https://${devDomain}/`;
     }
-    
     // Production web: use relative URLs (same origin)
     return window.location.origin + "/";
   }
 
-  // iOS and Android: ALWAYS use the production API URL
-  // This is intentionally hardcoded to avoid any env var issues with mobile builds
-  console.log("Mobile API URL:", PRODUCTION_API_URL);
+  // Mobile (iOS/Android) handling
+  // __DEV__ is true in Expo Go and dev builds, false in production builds
+  if (__DEV__ && devDomain) {
+    // Development/Preview: use the dev server
+    const url = `https://${devDomain}/`;
+    console.log("Mobile API URL (dev):", url);
+    return url;
+  }
+  
+  // Production builds (TestFlight, App Store): use hardcoded production URL
+  console.log("Mobile API URL (prod):", PRODUCTION_API_URL);
   return PRODUCTION_API_URL;
 }
 
