@@ -24,6 +24,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { TagSelector } from "@/components/TagSelector";
 import { ObjectStorageImage } from "@/components/ObjectStorageImage";
+import { ItemSearchModal } from "@/components/ItemSearchModal";
 import { useTheme } from "@/hooks/useTheme";
 import {
   ClothingItem,
@@ -72,6 +73,7 @@ export default function OutfitBuilderScreen() {
   const [saving, setSaving] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
   const [originalAccessoryIds, setOriginalAccessoryIds] = useState<string[]>([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const existingTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -455,16 +457,37 @@ export default function OutfitBuilderScreen() {
   const groupedCoreItems = useMemo(() => {
     return CORE_CATEGORIES.map((category) => ({
       category,
-      items: coreItems.filter((item) => item.category === category),
+      items: coreItems
+        .filter((item) => item.category === category)
+        .sort((a, b) => {
+          const aSelected = selectedCoreIds.includes(a.id);
+          const bSelected = selectedCoreIds.includes(b.id);
+          if (aSelected && !bSelected) return -1;
+          if (!aSelected && bSelected) return 1;
+          return 0;
+        }),
     })).filter((group) => group.items.length > 0);
-  }, [coreItems]);
+  }, [coreItems, selectedCoreIds]);
 
   const groupedAccessoryItems = useMemo(() => {
     return ACCESSORY_CATEGORIES.map((category) => ({
       category,
-      items: accessoryItems.filter((item) => item.category === category),
+      items: accessoryItems
+        .filter((item) => item.category === category)
+        .sort((a, b) => {
+          const aSelected = selectedAccessoryIds.includes(a.id);
+          const bSelected = selectedAccessoryIds.includes(b.id);
+          if (aSelected && !bSelected) return -1;
+          if (!aSelected && bSelected) return 1;
+          return 0;
+        }),
     })).filter((group) => group.items.length > 0);
-  }, [accessoryItems]);
+  }, [accessoryItems, selectedAccessoryIds]);
+
+  const handleSearchSelectionChange = (coreIds: string[], accessoryIds: string[]) => {
+    setSelectedCoreIds(coreIds);
+    setSelectedAccessoryIds(accessoryIds);
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -580,6 +603,19 @@ export default function OutfitBuilderScreen() {
           <ThemedText type="caption" style={styles.sectionSubtitle}>
             Select your core pieces (tops, bottoms, dresses)
           </ThemedText>
+          
+          {items.length > 0 ? (
+            <Pressable
+              style={[styles.searchButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+              onPress={() => setShowSearchModal(true)}
+            >
+              <Feather name="search" size={18} color={theme.textSecondary} />
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Search & filter items...
+              </ThemedText>
+            </Pressable>
+          ) : null}
+          
           {coreItems.length === 0 ? (
             <View style={styles.emptySection}>
               <ThemedText type="body" style={styles.emptyText}>
@@ -649,6 +685,17 @@ export default function OutfitBuilderScreen() {
           </Button>
         </View>
       ) : null}
+
+      <ItemSearchModal
+        visible={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        items={items}
+        selectedCoreIds={selectedCoreIds}
+        selectedAccessoryIds={selectedAccessoryIds}
+        onSelectionChange={handleSearchSelectionChange}
+        coreCategories={CORE_CATEGORIES}
+        accessoryCategories={ACCESSORY_CATEGORIES}
+      />
     </ThemedView>
   );
 }
@@ -677,6 +724,16 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     opacity: 0.7,
     marginBottom: Spacing.md,
+  },
+  searchButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
   label: {
     fontWeight: "600",
