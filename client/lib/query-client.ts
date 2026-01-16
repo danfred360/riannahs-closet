@@ -15,6 +15,9 @@ export function getApiUrl(): string {
   // EXPO_PUBLIC_DOMAIN is set in development for the Replit dev server
   const apiDomain = process.env.EXPO_PUBLIC_API_DOMAIN;
   const devDomain = process.env.EXPO_PUBLIC_DOMAIN;
+  
+  // Production domain fallback - ensures mobile apps always use the correct API
+  const PRODUCTION_DOMAIN = "riannahscloset.com";
 
   // On web platform
   if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -27,12 +30,8 @@ export function getApiUrl(): string {
     return window.location.origin + "/";
   }
 
-  // Mobile: prefer API domain (production), fall back to dev domain
-  const host = apiDomain || devDomain;
-
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_API_DOMAIN or EXPO_PUBLIC_DOMAIN must be set");
-  }
+  // Mobile: prefer API domain, fall back to dev domain, then production fallback
+  const host = apiDomain || devDomain || PRODUCTION_DOMAIN;
 
   const url = new URL(`https://${host}`);
   console.log("Mobile API URL:", url.href);
