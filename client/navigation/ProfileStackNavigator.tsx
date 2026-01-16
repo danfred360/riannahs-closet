@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import HeaderTitle from "@/components/HeaderTitle";
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -19,7 +20,7 @@ export default function ProfileStackNavigator() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: "Profile",
+          headerTitle: () => <HeaderTitle />,
         }}
       />
     </Stack.Navigator>

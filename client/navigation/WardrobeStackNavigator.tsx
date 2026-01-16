@@ -2,7 +2,6 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import WardrobeScreen from "@/screens/WardrobeScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
-import HeaderTitle from "@/components/HeaderTitle";
 
 export type WardrobeStackParamList = {
   Wardrobe: undefined;
@@ -19,7 +18,7 @@ export default function WardrobeStackNavigator() {
         name="Wardrobe"
         component={WardrobeScreen}
         options={{
-          headerTitle: () => <HeaderTitle />,
+          headerTitle: "Wardrobe",
         }}
       />
     </Stack.Navigator>
