@@ -25,8 +25,8 @@ export function ObjectStorageImage({
     let cancelled = false;
 
     const loadImage = async () => {
-      // If it's already a data URL or http(s) URL, use directly
-      if (imageUri.startsWith("data:") || imageUri.startsWith("http")) {
+      // If it's already a data URL, http(s) URL, or file:// URL, use directly
+      if (imageUri.startsWith("data:") || imageUri.startsWith("http") || imageUri.startsWith("file://")) {
         setResolvedUri(imageUri);
         return;
       }

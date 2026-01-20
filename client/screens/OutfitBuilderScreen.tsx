@@ -231,16 +231,23 @@ export default function OutfitBuilderScreen() {
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        let finalUri: string;
         
-        if (asset.base64) {
-          const mimeType = asset.mimeType || "image/jpeg";
-          finalUri = `data:${mimeType};base64,${asset.base64}`;
+        // On native, use file URI directly for display, convert to base64 only when saving
+        // This avoids memory issues with large base64 strings
+        if (Platform.OS !== "web") {
+          setCoverImageUri(asset.uri);
         } else {
-          finalUri = await compressAndConvertToBase64(asset.uri);
+          // On web, we need base64
+          let finalUri: string;
+          if (asset.base64) {
+            const mimeType = asset.mimeType || "image/jpeg";
+            finalUri = `data:${mimeType};base64,${asset.base64}`;
+          } else {
+            finalUri = await compressAndConvertToBase64(asset.uri);
+          }
+          setCoverImageUri(finalUri);
         }
         
-        setCoverImageUri(finalUri);
         if (Platform.OS !== "web") {
           Haptics.selectionAsync();
         }
@@ -266,21 +273,13 @@ export default function OutfitBuilderScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.6,
-        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        let finalUri: string;
         
-        if (asset.base64) {
-          const mimeType = asset.mimeType || "image/jpeg";
-          finalUri = `data:${mimeType};base64,${asset.base64}`;
-        } else {
-          finalUri = await compressAndConvertToBase64(asset.uri);
-        }
-        
-        setCoverImageUri(finalUri);
+        // On native, use file URI directly for display
+        setCoverImageUri(asset.uri);
         if (Platform.OS !== "web") {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -303,12 +302,22 @@ export default function OutfitBuilderScreen() {
 
     setSaving(true);
     try {
+      // Convert file:// URIs to base64 for upload
+      let processedCoverImageUri = coverImageUri;
+      if (coverImageUri && coverImageUri.startsWith("file://") && Platform.OS !== "web") {
+        try {
+          processedCoverImageUri = await compressAndConvertToBase64(coverImageUri);
+        } catch (error) {
+          console.error("Failed to convert cover image to base64:", error);
+        }
+      }
+      
       if (isEditing) {
-        let finalCoverImageUri = coverImageUri;
+        let finalCoverImageUri = processedCoverImageUri;
         
-        if (coverImageUri && coverImageUri.startsWith("data:")) {
+        if (processedCoverImageUri && processedCoverImageUri.startsWith("data:")) {
           const imageKey = `outfit-cover-${generateId()}.jpg`;
-          const uploadResult = await uploadImage(coverImageUri, imageKey);
+          const uploadResult = await uploadImage(processedCoverImageUri, imageKey);
           finalCoverImageUri = uploadResult.key;
         }
         
@@ -325,7 +334,7 @@ export default function OutfitBuilderScreen() {
       } else {
         await addOutfitOptimistic({
           name: name.trim(),
-          coverImageUri,
+          coverImageUri: processedCoverImageUri,
           itemIds: selectedCoreIds,
           accessoryIds: selectedAccessoryIds,
           tags,
