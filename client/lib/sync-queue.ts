@@ -227,11 +227,23 @@ async function executeSyncOperation(operation: SyncOperation): Promise<SyncResul
         body = JSON.stringify(outfitPayload);
         break;
       }
-      case "update_outfit":
+      case "update_outfit": {
+        const updateOutfitPayload = { ...operation.payload };
+        
+        // Handle cover image upload for updates
+        if (typeof updateOutfitPayload.coverImageUri === "string" && updateOutfitPayload.coverImageUri.startsWith("data:")) {
+          console.log("[Sync] Uploading outfit cover image for update...");
+          const fileName = `outfit-cover-${updateOutfitPayload.id || Date.now()}.jpg`;
+          const uploadedKey = await uploadImageToServer(updateOutfitPayload.coverImageUri, fileName, token);
+          console.log("[Sync] Outfit cover image uploaded, key:", uploadedKey);
+          updateOutfitPayload.coverImageUri = uploadedKey;
+        }
+        
         url = new URL(`/api/v1/outfits/${operation.payload.id}`, getApiUrl()).toString();
         method = "PUT";
-        body = JSON.stringify(operation.payload);
+        body = JSON.stringify(updateOutfitPayload);
         break;
+      }
       case "delete_outfit":
         url = new URL(`/api/v1/outfits/${operation.payload.id}`, getApiUrl()).toString();
         method = "DELETE";
@@ -322,6 +334,28 @@ async function executeSyncOperation(operation: SyncOperation): Promise<SyncResul
         }
       } catch (e) {
         console.error("[Sync] Error updating cache after outfit creation:", e);
+      }
+    }
+    
+    if (operation.type === "update_outfit") {
+      try {
+        const result = await response.json();
+        if (result?.id) {
+          // Update local cache with server response (includes correct coverImageUri key)
+          const { getCached, setCache, CACHE_KEYS } = await import("./cache");
+          const cached = await getCached<any[]>(CACHE_KEYS.OUTFITS);
+          if (cached) {
+            const updatedCache = cached.map((outfit) => 
+              outfit.id === result.id 
+                ? { ...result, itemIds: outfit.itemIds || [], accessoryIds: outfit.accessoryIds || [] }
+                : outfit
+            );
+            await setCache(CACHE_KEYS.OUTFITS, updatedCache);
+            console.log(`[Sync] Updated cache after outfit update, coverImageUri: ${result.coverImageUri}`);
+          }
+        }
+      } catch (e) {
+        console.error("[Sync] Error updating cache after outfit update:", e);
       }
     }
     
