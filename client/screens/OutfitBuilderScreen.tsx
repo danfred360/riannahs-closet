@@ -19,6 +19,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
+import * as Linking from "expo-linking";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -200,6 +201,26 @@ export default function OutfitBuilderScreen() {
 
   const handlePickCoverImage = async () => {
     try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Photo library permission is needed to select photos.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { 
+              text: "Open Settings", 
+              onPress: () => {
+                if (Platform.OS !== "web") {
+                  Linking.openSettings();
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         quality: 0.8,
