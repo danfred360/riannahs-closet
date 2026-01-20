@@ -70,6 +70,7 @@ export default function OutfitBuilderScreen() {
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [items, setItems] = useState<ClothingItem[]>([]);
+  const [allOutfits, setAllOutfits] = useState<Outfit[]>([]);
   const [saving, setSaving] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState<string>("");
   const [originalAccessoryIds, setOriginalAccessoryIds] = useState<string[]>([]);
@@ -78,8 +79,9 @@ export default function OutfitBuilderScreen() {
   const existingTags = useMemo(() => {
     const tagSet = new Set<string>();
     items.forEach((item) => item.tags?.forEach((tag) => tagSet.add(tag)));
+    allOutfits.forEach((outfit) => outfit.tags?.forEach((tag) => tagSet.add(tag)));
     return Array.from(tagSet);
-  }, [items]);
+  }, [items, allOutfits]);
 
   const coreItems = useMemo(
     () => items.filter((item) => CORE_CATEGORIES.includes(item.category)),
@@ -93,11 +95,14 @@ export default function OutfitBuilderScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const clothingItems = await getClothingItems();
+      const [clothingItems, outfits] = await Promise.all([
+        getClothingItems(),
+        getOutfits(),
+      ]);
       setItems(clothingItems);
+      setAllOutfits(outfits);
 
       if (isEditing) {
-        const outfits = await getOutfits();
         const outfit = outfits.find((o) => o.id === route.params?.outfitId);
         if (outfit) {
           setName(outfit.name);
