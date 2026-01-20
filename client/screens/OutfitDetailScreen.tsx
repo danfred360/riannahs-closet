@@ -40,12 +40,12 @@ export default function OutfitDetailScreen() {
   const [wearHistory, setWearHistory] = useState<PlannedOutfit[]>([]);
   const [showAllWearHistory, setShowAllWearHistory] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forceRefresh: boolean = false) => {
     try {
       const [outfits, allItems, plannedOutfits] = await Promise.all([
-        getOutfits(),
-        getClothingItems(),
-        getPlannedOutfits(),
+        getOutfits(forceRefresh),
+        getClothingItems(forceRefresh),
+        getPlannedOutfits(forceRefresh),
       ]);
 
       const found = outfits.find((o) => o.id === route.params.outfitId);
@@ -76,7 +76,7 @@ export default function OutfitDetailScreen() {
   }, [loadData]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadData);
+    const unsubscribe = navigation.addListener("focus", () => loadData(true));
     return unsubscribe;
   }, [navigation, loadData]);
 

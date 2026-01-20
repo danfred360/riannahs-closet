@@ -279,8 +279,20 @@ async function executeSyncOperation(operation: SyncOperation): Promise<SyncResul
         if (result?.id) {
           registerTempIdMapping(operation.payload.tempId as string, result.id);
           console.log(`[Sync] Registered item temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
+          
+          // Update local cache with server response (includes correct imageUri key)
+          const { getCached, setCache, CACHE_KEYS } = await import("./cache");
+          const cached = await getCached<any[]>(CACHE_KEYS.CLOTHING_ITEMS);
+          if (cached) {
+            const updatedCache = cached.map((item) => 
+              item.id === operation.payload.tempId ? result : item
+            );
+            await setCache(CACHE_KEYS.CLOTHING_ITEMS, updatedCache);
+            console.log(`[Sync] Updated cache with server item data, imageUri: ${result.imageUri}`);
+          }
         }
-      } catch {
+      } catch (e) {
+        console.error("[Sync] Error updating cache after item creation:", e);
       }
     }
     
@@ -290,8 +302,22 @@ async function executeSyncOperation(operation: SyncOperation): Promise<SyncResul
         if (result?.id) {
           registerTempIdMapping(operation.payload.tempId as string, result.id);
           console.log(`[Sync] Registered outfit temp ID mapping: ${operation.payload.tempId} -> ${result.id}`);
+          
+          // Update local cache with server response (includes correct coverImageUri key)
+          const { getCached, setCache, CACHE_KEYS } = await import("./cache");
+          const cached = await getCached<any[]>(CACHE_KEYS.OUTFITS);
+          if (cached) {
+            const updatedCache = cached.map((outfit) => 
+              outfit.id === operation.payload.tempId 
+                ? { ...result, itemIds: outfit.itemIds || [], accessoryIds: outfit.accessoryIds || [] }
+                : outfit
+            );
+            await setCache(CACHE_KEYS.OUTFITS, updatedCache);
+            console.log(`[Sync] Updated cache with server outfit data, coverImageUri: ${result.coverImageUri}`);
+          }
         }
-      } catch {
+      } catch (e) {
+        console.error("[Sync] Error updating cache after outfit creation:", e);
       }
     }
     

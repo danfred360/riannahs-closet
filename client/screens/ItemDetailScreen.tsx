@@ -36,11 +36,11 @@ export default function ItemDetailScreen() {
   const [item, setItem] = useState<ClothingItem | null>(null);
   const [usedInOutfits, setUsedInOutfits] = useState<Outfit[]>([]);
 
-  const loadItem = useCallback(async () => {
+  const loadItem = useCallback(async (forceRefresh: boolean = false) => {
     try {
       const [items, outfits] = await Promise.all([
-        getClothingItems(),
-        getOutfits(),
+        getClothingItems(forceRefresh),
+        getOutfits(forceRefresh),
       ]);
       const found = items.find((i) => i.id === route.params.itemId);
       setItem(found || null);
@@ -59,7 +59,7 @@ export default function ItemDetailScreen() {
   }, [loadItem]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadItem);
+    const unsubscribe = navigation.addListener("focus", () => loadItem(true));
     return unsubscribe;
   }, [navigation, loadItem]);
 
