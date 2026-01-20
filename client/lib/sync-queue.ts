@@ -213,9 +213,13 @@ async function executeSyncOperation(operation: SyncOperation): Promise<SyncResul
         }
         
         if (typeof outfitPayload.coverImageUri === "string" && outfitPayload.coverImageUri.startsWith("data:")) {
+          console.log("[Sync] Uploading outfit cover image...");
           const fileName = `outfit-cover-${outfitPayload.tempId || Date.now()}.jpg`;
           const uploadedKey = await uploadImageToServer(outfitPayload.coverImageUri, fileName, token);
+          console.log("[Sync] Outfit cover image uploaded, key:", uploadedKey);
           outfitPayload.coverImageUri = uploadedKey;
+        } else if (outfitPayload.coverImageUri) {
+          console.log("[Sync] Outfit cover image already has key:", outfitPayload.coverImageUri);
         }
         
         url = new URL("/api/v1/outfits", getApiUrl()).toString();
