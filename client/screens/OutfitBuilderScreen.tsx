@@ -20,6 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
 import * as Linking from "expo-linking";
+import { useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -60,6 +61,7 @@ export default function OutfitBuilderScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
 
   const isEditing = !!route.params?.outfitId;
   const { width: windowWidth } = useWindowDimensions();
@@ -341,6 +343,8 @@ export default function OutfitBuilderScreen() {
         });
       }
 
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/outfits"] });
+      
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
