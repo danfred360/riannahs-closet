@@ -24,6 +24,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Closet",
         "NSCameraUsageDescription": "Riannah's Closet needs access to your camera to take photos of your clothing items. For example, you can photograph a new shirt to add it to your digital wardrobe.",
+        "NSPhotoLibraryAddUsageDescription": "Riannah's Closet needs access to your photo library to select existing photos of your clothing items. For example, you can choose a saved photo of a dress to add it to your wardrobe collection.",
         "NSPhotoLibraryUsageDescription": "Riannah's Closet needs access to your photo library to select existing photos of your clothing items. For example, you can choose a saved photo of a dress to add it to your wardrobe collection."
       }
     },
